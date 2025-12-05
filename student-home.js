@@ -272,8 +272,21 @@ auth.onAuthStateChanged(async (user) => {
     profileDropdown.classList.remove("show");
     profileDropdown.setAttribute("aria-hidden", "true");
     profileBtn.setAttribute("aria-expanded", "false");
-    window.location.href = "student-my-enrollments.html";
+    window.location.href = "Student_Enrollment/student-my-enrollments.html";
   };
+
+  // Change Password link opens change-password page (close dropdown first)
+  const changePwdLink = document.getElementById("changePwdLink");
+  if (changePwdLink) {
+    changePwdLink.onclick = function (ev) {
+      ev.preventDefault();
+      profileDropdown.classList.remove("show");
+      profileDropdown.setAttribute("aria-hidden", "true");
+      profileBtn.setAttribute("aria-expanded", "false");
+      // navigate to change password page
+      window.location.href = "Student_Enrollment/change-password.html";
+    };
+  }
 
   // logout
   logoutBtn.onclick = async function () {

@@ -133,5 +133,7 @@ function updateFromAllData() {
     homeCoursesWithGroupsEl.textContent = coursesWithGroups;
 }
 
+
+
 // Start
 loadAll();

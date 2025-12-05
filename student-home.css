@@ -346,3 +346,7 @@ body {
   width: 100%;
 }
 
+/* dropdown extra (if not already present) */
+.profile-dropdown { min-width: 200px; }
+.profile-item { font-size: 14px; }
+.profile-item + .profile-item { margin-top: 4px; }
