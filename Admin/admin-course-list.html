@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Course List - Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="admin.css" />
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <!-- Export Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1 class="logo">Admin – Course List</h1>
+      <nav class="nav-links">
+        <a href="admin.html" class="nav-link">Admin Home</a>
+        <a href="admin-course.html" class="nav-link">Create / Update Course</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>All Courses</h2>
+      <p class="note">
+        Overview of all courses with seats and topic usage. You can edit, suspend/activate, delete,
+        or export course details as Excel / PDF.
+      </p>
+
+      <!-- Summary row -->
+      <div class="form-group" style="margin-bottom: 4px;">
+        <strong>Total Active Courses:</strong> <span id="listTotalCourses">0</span> &nbsp; | &nbsp;
+        <strong>Total Active Seats:</strong> <span id="listTotalSeats">0</span> &nbsp; | &nbsp;
+        <strong>Enrolled:</strong> <span id="listTotalFilled">0</span> &nbsp; | &nbsp;
+        <strong>Remaining:</strong> <span id="listTotalRemaining">0</span>
+      </div>
+
+      <!-- Export buttons -->
+      <div class="form-group" style="margin-bottom: 10px;">
+        <button id="exportCoursesExcelBtn" class="btn-primary">
+          Export Courses to Excel
+        </button>
+        <button id="exportCoursesPdfBtn" class="btn-secondary" style="margin-left:8px;">
+          Export Courses to PDF
+        </button>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Course Name</th>
+            <th>Max Seats</th>
+            <th>Filled</th>
+            <th>Remaining</th>
+            <th>Topics (Taken/Total)</th>
+            <th>Start Date</th>
+            <th>Duration</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="coursesTableBody">
+          <!-- Filled by admin-course-list.js -->
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© 2025 Course Enrollment Admin</p>
+    </div>
+  </footer>
+
+  <script src="admin-course-list.js"></script>
+</body>
+</html>

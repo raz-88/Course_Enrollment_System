@@ -1,0 +1,348 @@
+/* student-home.css */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f5f7fb;
+  color: #222;
+}
+
+/* Layout helpers */
+.container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* Header */
+.site-header {
+  background: #1b5e20;
+  color: #fff;
+  padding: 12px 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.nav-links {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.nav-link {
+  color: #e8f5e9;
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.disabled-link {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Hero */
+.hero {
+  margin: 18px 0 10px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 16px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.hero-text h2 {
+  font-size: 1.4rem;
+  margin-bottom: 4px;
+}
+
+.hero-text p {
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+
+/* Courses section */
+.courses-section {
+  margin-bottom: 32px;
+}
+
+.courses-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 10px 0;
+}
+
+.courses-header h2 {
+  font-size: 1.2rem;
+}
+
+.note {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+/* Grid */
+.courses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+/* Course card */
+.course-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 14px 14px 12px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.course-header {
+  margin-bottom: 6px;
+}
+
+.course-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.course-desc {
+  font-size: 0.9rem;
+  color: #4b5563;
+  margin-top: 4px;
+}
+
+.course-meta {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.course-meta span {
+  display: block;
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-seats-ok {
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.badge-seats-low {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.badge-seats-full {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+/* Footer row in card */
+.course-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+}
+
+.btn-primary {
+  background: #1b5e20;
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(22, 163, 74, 0.35);
+}
+
+.btn-primary:hover {
+  background: #166534;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(22, 163, 74, 0.45);
+}
+
+.btn-secondary {
+  background: #e5f3e8;
+  color: #14532d;
+}
+
+.btn-secondary:hover {
+  background: #d1fae5;
+  transform: translateY(-1px);
+}
+
+.btn:disabled,
+.btn.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Seats text */
+.seat-line {
+  font-size: 0.85rem;
+}
+
+/* Footer */
+.site-footer {
+  border-top: 1px solid #e5e7eb;
+  padding: 10px 0;
+  margin-top: 12px;
+  font-size: 0.8rem;
+  color: #6b7280;
+  background: #f9fafb;
+}
+
+/* Responsive tweaks */
+@media (max-width: 600px) {
+  .header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .hero {
+    padding: 14px 12px;
+  }
+}
+
+.btn-logout {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #ffeaea;
+}
+.btn-logout:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+/* Profile dropdown styles (add to student-home.css) */
+.profile-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-left: 12px;
+}
+
+.profile-btn {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  border: none;
+  background: transparent;
+  color: #e8f5e9;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 999px;
+}
+
+.profile-initial {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.profile-name {
+  font-size: 0.95rem;
+  color: #e8f5e9;
+}
+
+/* dropdown */
+.profile-dropdown {
+  position: absolute;
+  right: 0;
+  top: 46px;
+  min-width: 160px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(2,6,23,0.12);
+  padding: 8px 6px;
+  display: none;
+  z-index: 60;
+}
+
+.profile-dropdown.show {
+  display: block;
+}
+
+.profile-item {
+  display: block;
+  text-decoration: none;
+  color: #0f172a;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  background: transparent;
+  text-align: left;
+  width: 100%;
+  border: none;
+  cursor: pointer;
+}
+
+.profile-item:hover {
+  background: #f1f5f9;
+}
+
+.profile-logout {
+  width: 100%;
+}
+

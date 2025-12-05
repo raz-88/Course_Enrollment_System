@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Student Home – Course Enrollment</title>
+  <meta name="viewport" co-----------------------------------------------------------------------------------------------------------------------------------------ntent="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="student-home.css" />
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1 class="logo">Course Enrollment Portal</h1>
+
+      <nav class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="student-my-enrollments.html" class="nav-link">My Enrollments</a>
+
+        <!-- Profile wrapper: shows "Sign in" when not logged in,
+            or welcome + avatar when logged in. -->
+        <div id="profileWrapper" class="profile-wrapper">
+          <button id="profileBtn" class="profile-btn" aria-haspopup="true" aria-expanded="false">
+            <span id="profileInitial" class="profile-initial">A</span>
+            <span id="profileName" class="profile-name">Sign in</span>
+          </button>
+
+          <div id="profileDropdown" class="profile-dropdown" role="menu" aria-hidden="true">
+            <a id="profileLink" href="student-my-enrollments.html" class="profile-item">My Enrollments</a>
+            <button id="logoutBtn" class="profile-item profile-logout">Logout</button>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+
+
+  <main class="container">
+    <section class="hero">
+      <div class="hero-text">
+        <h2>Welcome!</h2>
+        <p>
+          Choose from the available courses below and enroll in your preferred topic.
+          Seats are limited and topics may fill up, so enroll early.
+        </p>
+      </div>
+    </section>
+
+    <section class="courses-section">
+      <div class="courses-header">
+        <h2>Available Courses</h2>
+        <p id="coursesInfo" class="note">
+          Loading courses...
+        </p>
+      </div>
+
+      <div id="coursesGrid" class="courses-grid">
+        <!-- Cards rendered by student-home.js -->
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© 2025 Course Enrollment Portal</p>
+    </div>
+  </footer>
+
+  <script src="student-home.js"></script>
+</body>
+</html>

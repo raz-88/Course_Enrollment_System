@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Enrolled Students - Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="admin.css" />
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <!-- Export Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1 class="logo">Admin – Enrolled Students</h1>
+      <nav class="nav-links">
+        <a href="admin.html" class="nav-link">Admin Home</a>
+        <a href="admin-course-list.html" class="nav-link">Course List</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>Enrolled Students by Course</h2>
+      <p class="note">
+        Select a course to view and manage enrollments. You can edit student details, change topic,
+        delete enrollments, and see / edit which group(s) each student belongs to.
+      </p>
+
+      <!-- Select Course -->
+      <div class="form-group">
+        <label for="enrolledCourseSelect">Select Course</label>
+        <select id="enrolledCourseSelect">
+          <option value="">-- Choose Course --</option>
+        </select>
+      </div>
+
+      <!-- Edit Enrollment Form -->
+      <section class="card" style="margin-top: 12px;">
+        <h3>Edit Enrollment</h3>
+        <p class="note small">
+          Select a row in the table below and click <strong>Edit</strong> to load the data here.
+          You can update name, email, topic, and group membership. Topic capacity will be checked.
+        </p>
+
+        <form id="enrollmentEditForm">
+          <div class="form-group">
+            <label for="editStudentName">Student Name</label>
+            <input type="text" id="editStudentName" placeholder="Student name" />
+          </div>
+
+          <div class="form-group">
+            <label for="editStudentEmail">Student Email</label>
+            <input type="email" id="editStudentEmail" placeholder="Student email" />
+          </div>
+
+          <div class="form-group">
+            <label for="editTopicSelect">Topic</label>
+            <select id="editTopicSelect">
+              <option value="">-- Select Topic --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Group Membership</label>
+            <div id="editGroupsContainer" class="group-checkbox-container">
+              <!-- Filled dynamically with group checkboxes -->
+            </div>
+          </div>
+
+          <p id="enrollmentFormMsg" class="message"></p>
+
+          <button type="submit" class="btn-primary">
+            Save Changes
+          </button>
+        </form>
+      </section>
+
+      <!-- Summary -->
+      <div class="form-group" style="margin-top:12px; margin-bottom:4px;">
+        <strong>Total Enrollments:</strong> <span id="enrollTotal">0</span> &nbsp; | &nbsp;
+        <strong>Unique Topics Used:</strong> <span id="enrollTopicsUsed">0</span>
+      </div>
+
+      <!-- Export buttons -->
+      <div class="form-group" style="margin-bottom:10px;">
+        <button id="exportEnrollExcelBtn" class="btn-primary">
+          Export Enrollments to Excel
+        </button>
+        <button id="exportEnrollPdfBtn" class="btn-secondary" style="margin-left:8px;">
+          Export Enrollments to PDF
+        </button>
+      </div>
+
+      <!-- Enrollments Table -->
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>S. No.</th>
+            <th>Student Name</th>
+            <th>Email</th>
+            <th>Topic</th>
+            <th>Enrolled At</th>
+            <th>Groups</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="enrollmentsTableBody">
+          <!-- Filled by admin-enrollments.js -->
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© 2025 Course Enrollment Admin</p>
+    </div>
+  </footer>
+
+  <script src="admin-enrollments.js"></script>
+</body>
+</html>

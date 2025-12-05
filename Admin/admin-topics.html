@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Manage Topics for Course</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="admin.css" />
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <!-- Export Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1 class="logo">Admin – Manage Topics</h1>
+      <nav class="nav-links">
+        <a href="admin.html" class="nav-link">Admin Home</a>
+        <a href="admin-course-list.html" class="nav-link">Course List</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>Manage Topics for Course</h2>
+      <p class="note">
+        Select a course, then add / edit topics. Each topic has a max capacity (how many people can enroll)
+        and you can see how many members are already assigned in groups.
+      </p>
+
+      <!-- Select Course -->
+      <div class="form-group">
+        <label for="topicCourseSelect">Select Course</label>
+        <select id="topicCourseSelect">
+          <option value="">-- Choose Course --</option>
+        </select>
+      </div>
+
+      <!-- Add / Edit Topic Form -->
+      <form id="topicForm" class="topic-form" style="margin-bottom:10px;">
+        <div class="form-group">
+          <label for="topicTitle">Topic Name</label>
+          <input
+            type="text"
+            id="topicTitle"
+            placeholder="e.g. AI in Healthcare, Cloud Computing Basics, etc."
+          />
+        </div>
+        <div class="form-group">
+          <label for="topicMaxPeople">Max People (capacity)</label>
+          <input
+            type="number"
+            id="topicMaxPeople"
+            min="1"
+            placeholder="e.g. 3, 5, 10"
+          />
+        </div>
+        <button type="submit" class="btn-secondary" id="addTopicBtn">
+          Save Topic
+        </button>
+      </form>
+      <p id="topicFormMsg" class="message"></p>
+
+      <!-- Summary -->
+      <div class="form-group" style="margin-top:12px; margin-bottom:4px;">
+        <strong>Total Topics:</strong> <span id="topicsTotal">0</span> &nbsp; | &nbsp;
+        <strong>Active Topics:</strong> <span id="topicsActive">0</span> &nbsp; | &nbsp;
+        <strong>Total Capacity:</strong> <span id="topicsTotalCapacity">0</span> &nbsp; | &nbsp;
+        <strong>Total Used in Groups:</strong> <span id="topicsTotalUsed">0</span>
+      </div>
+
+      <!-- Export buttons -->
+      <div class="form-group" style="margin-bottom:10px;">
+        <button id="exportTopicsExcelBtn" class="btn-primary">
+          Export Topics to Excel
+        </button>
+        <button id="exportTopicsPdfBtn" class="btn-secondary" style="margin-left:8px;">
+          Export Topics to PDF
+        </button>
+      </div>
+
+      <!-- Topics Table -->
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>S. No.</th>
+            <th>Topic Name</th>
+            <th>Max People</th>
+            <th>Used</th>
+            <th>Remaining</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="topicsTableBody">
+          <!-- Filled by admin-topics.js -->
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© 2025 Course Enrollment Admin</p>
+    </div>
+  </footer>
+
+  <script src="admin-topics.js"></script>
+</body>
+</html>

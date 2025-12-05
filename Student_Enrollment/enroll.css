@@ -1,0 +1,72 @@
+/* enroll.css - small styles for the enrollment form */
+
+.course-summary {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 1px 6px rgba(15,23,42,0.04);
+  margin-bottom: 14px;
+}
+
+.enroll-form .form-group {
+  margin-bottom: 10px;
+}
+
+.enroll-form label {
+  display: block;
+  font-size: 0.88rem;
+  margin-bottom: 6px;
+  color: #111827;
+}
+
+.enroll-form input[type="text"],
+.enroll-form input[type="email"],
+.enroll-form select,
+.enroll-form textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e6eef0;
+  font-size: 0.95rem;
+  outline: none;
+  background: #fff;
+}
+
+.enroll-form input:focus,
+.enroll-form select:focus,
+.enroll-form textarea:focus {
+  border-color: #10b981;
+  box-shadow: 0 4px 12px rgba(16,185,129,0.06);
+}
+
+.message {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: #7f9a86;
+}
+
+.message.success {
+  color: #065f46;
+  font-weight: 600;
+}
+
+.message.error {
+  color: #9b1c1c;
+  font-weight: 600;
+}
+
+/* topic option disabled visual (non-standard but helps in some browsers) */
+select option[disabled] {
+  color: #9ca3af;
+}
+
+/* small screens spacing */
+@media (max-width: 600px) {
+  .enroll-form .btn {
+    width: 100%;
+  }
+
+  .enroll-form > div[style] {
+    flex-direction: column;
+  }
+}

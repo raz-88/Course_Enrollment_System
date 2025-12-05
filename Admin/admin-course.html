@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Create / Update Course</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="admin.css" />
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1 class="logo">Admin – Create / Update Course</h1>
+      <nav class="nav-links">
+        <a href="admin.html" class="nav-link">Admin Home</a>
+        <a href="admin-course-list.html" class="nav-link">Course List</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2 id="coursePageTitle">Create New Course</h2>
+      <p class="note" id="coursePageNote">
+        If you enter a course name that already exists, it will be updated instead of creating a new one.
+      </p>
+
+      <form id="courseForm">
+        <div class="form-group">
+          <label for="courseName">Course Name</label>
+          <input type="text" id="courseName" placeholder="e.g. Presentation" required />
+        </div>
+
+        <div class="form-group">
+          <label for="courseDescription">Description</label>
+          <textarea id="courseDescription" rows="3" placeholder="Short description about the course"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="maxSeats">Max Seats</label>
+          <input type="number" id="maxSeats" min="1" placeholder="e.g. 30" required />
+        </div>
+
+        <div class="form-group">
+          <label for="startDate">Start Date (optional)</label>
+          <input type="date" id="startDate" />
+        </div>
+
+        <div class="form-group">
+          <label for="duration">Duration (optional)</label>
+          <input type="text" id="duration" placeholder="e.g. 4 weeks, 2 days, etc." />
+        </div>
+
+        <p class="note small" id="courseStatusInfo" style="display:none;">
+          Status: <span id="courseStatusLabel"></span>
+        </p>
+
+        <button type="submit" class="btn-primary">Save Course</button>
+        <p id="courseFormMsg" class="message"></p>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© 2025 Course Enrollment Admin</p>
+    </div>
+  </footer>
+
+  <script src="admin-course.js"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Create Group - Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="admin.css" />
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1 class="logo">Admin – Create Group</h1>
+      <nav class="nav-links">
+        <a href="admin.html" class="nav-link">Admin Home</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>Create Group</h2>
+      <p class="note">
+        Select a course, choose enrolled students, set their role (Lead/Member), and create a group.
+      </p>
+
+      <!-- Select Course -->
+      <div class="form-group">
+        <label for="groupCourseSelect">Select Course</label>
+        <select id="groupCourseSelect">
+          <option value="">-- Choose Course --</option>
+        </select>
+      </div>
+
+      <!-- Group Info -->
+      <form id="groupForm">
+        <div class="form-group">
+          <label for="groupName">Group Name</label>
+          <input type="text" id="groupName" placeholder="e.g. Group A, Batch 1, Team Alpha" required />
+        </div>
+
+        <div class="form-group">
+          <label for="groupDescription">Group Description (optional)</label>
+          <textarea id="groupDescription" rows="2" placeholder="Short description about this group"></textarea>
+        </div>
+
+        <p class="note">
+          Now select students below to add them into this group and assign a role.
+        </p>
+
+        <!-- Enrolled Students List -->
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Select</th>
+              <th>Student Name</th>
+              <th>Email</th>
+              <th>Topic</th>
+              <th>Enrolled At</th>
+              <th>Role</th>
+              <th>Group Status</th>
+            </tr>
+          </thead>
+          <tbody id="studentsTableBody">
+            <!-- Filled by admin-group-create.js -->
+          </tbody>
+        </table>
+
+        <p id="groupFormMsg" class="message"></p>
+
+        <button type="submit" class="btn-primary" style="margin-top: 10px;">
+          Create Group
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© 2025 Course Enrollment Admin</p>
+    </div>
+  </footer>
+
+  <script src="admin-group-create.js"></script>
+</body>
+</html>

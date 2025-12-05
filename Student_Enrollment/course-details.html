@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Course Details</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- Reuse student-home styles for visual consistency -->
+  <link rel="stylesheet" href="student-home.css" />
+  <link rel="stylesheet" href="course-details.css" />
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1 class="logo">Course Enrollment Portal</h1>
+      <nav class="nav-links">
+        <a href="index.html" class="nav-link">All Courses</a>
+        <a href="#" class="nav-link disabled-link">My Enrollments</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" id="mainContent">
+    <section class="card" id="courseCard">
+      <div id="courseInfoArea">
+        <h2 id="courseTitle">Loading...</h2>
+        <p id="courseDesc" class="course-desc"></p>
+
+        <div class="course-meta" id="courseMeta">
+          <!-- start date, duration, seats -->
+        </div>
+
+        <div style="margin-top:10px;">
+          <a id="backBtn" class="btn btn-secondary" href="index.html">← Back to Courses</a>
+          <a id="enrollCourseBtn" class="btn btn-primary" href="#" style="margin-left:8px;">Enroll (open page)</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:14px;">
+      <h3>Topics</h3>
+      <p class="note">Select a topic to view current usage. If a topic is full it will be disabled.</p>
+
+      <div id="topicsList" style="margin-top:10px;">
+        <!-- Topic rows inserted here -->
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© 2025 Course Enrollment Portal</p>
+    </div>
+  </footer>
+
+  <script src="course-details.js"></script>
+</body>
+</html>
