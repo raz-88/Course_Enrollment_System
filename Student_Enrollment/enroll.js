@@ -40,7 +40,7 @@ const courseId = getParam("courseId");
 const preselectedTopicId = getParam("topicId") || null;
 
 courseIdInput.value = courseId || "";
-backToCourse.href = courseId ? "course-details.html?courseId=" + encodeURIComponent(courseId) : "index.html";
+backToCourse.href = courseId ? "course-details.html?courseId=" + encodeURIComponent(courseId) : "../index.html";
 
 if (!courseId) {
   pageTitle.textContent = "Course not specified";
