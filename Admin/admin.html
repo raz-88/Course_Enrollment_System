@@ -9,32 +9,37 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  
 </head>
 <body>
   <!-- Header -->
-  <header class="site-header">
+  <header class="site-header admin-header">
     <div class="container header-inner">
-      <h1 class="logo">Admin Dashboard</h1>
+      <h1 class="logo">Admin Panel</h1>
+
       <nav class="nav-links">
-        <a href="index.html" class="nav-link">Student Home</a>
-        <a href="admin.html" class="nav-link active">Admin Home</a>
+        <a href="admin.html" class="nav-link">Dashboard</a>
+        <a href="admin-course-list.html" class="nav-link">Courses</a>
+        <a href="admin-enrollments.html" class="nav-link">Enrollments</a>
+
+        <!-- Admin profile wrapper -->
+        <div id="adminProfileWrapper" class="profile-wrapper">
+          <button id="adminProfileBtn" class="profile-btn" aria-haspopup="true" aria-expanded="false">
+            <span id="adminProfileInitial" class="profile-initial">A</span>
+            <span id="adminProfileName" class="profile-name">Admin</span>
+          </button>
+
+          <div id="adminProfileDropdown" class="profile-dropdown" role="menu" aria-hidden="true">
+            <a id="adminProfileLink" href="admin-profile.html" class="profile-item">My Profile</a>
+            <a id="adminChangePwdLink" href="change-password.html" class="profile-item">Change Password</a>
+            <button id="adminLogoutBtn" class="profile-item profile-logout">Logout</button>
+          </div>
+        </div>
       </nav>
     </div>
-    <div class="admin-header-right">
-      <!-- Profile Button -->
-      <div class="admin-profile-btn">
-          <img src="assets/img/avatar.png" alt="Admin" class="admin-avatar">
-          <span class="admin-name">Admin</span>
-      </div>
-
-      <!-- Logout Button -->
-      <button class="admin-logout-btn" onclick="adminLogout()">
-          <i class="fas fa-sign-out-alt"></i> Logout
-      </button>
-    </div>
-
-    
   </header>
+
 
   <!-- Hero -->
   <section class="hero">
@@ -135,6 +140,9 @@
       <p>© 2025 Course Enrollment Admin</p>
     </div>
   </footer>
+
+  
+  <script src="admin-profile.js"></script>
 
   <script src="admin-home.js"></script>
 </body>

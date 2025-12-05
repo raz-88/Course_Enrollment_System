@@ -45,6 +45,7 @@ body {
   color: #e8f5e9;
   text-decoration: none;
   font-weight: 500;
+  padding-top: 11px;
 }
 
 .nav-link.active {
@@ -305,53 +306,15 @@ button:disabled {
     gap: 15px;
 }
 
-/* Profile Button */
-.admin-profile-btn {
-    display: flex;
-    align-items: center;
-    background: #ffffff;
-    border: 1px solid #dfe6e0;
-    padding: 8px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: 0.3s ease;
-}
 
-.admin-profile-btn:hover {
-    background: #e9f9ee; /* soft green hover */
-}
 
-.admin-profile-btn .admin-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    margin-right: 8px;
-}
-
-.admin-profile-btn .admin-name {
-    font-weight: 600;
-    color: #2c3e50;
-}
-
-/* Logout Button */
-.admin-logout-btn {
-    background: #e74c3c;
-    color: #fff;
-    border: none;
-    padding: 8px 16px;
-    font-size: 14px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: 0.3s;
-}
-
-.admin-logout-btn:hover {
-    background: #c0392b;
-}
-
-.admin-logout-btn i {
-    font-size: 16px;
-}
+/* admin profile dropdown (same styles as student) */
+.profile-wrapper { position: relative; display: inline-block; margin-left: 12px; }
+.profile-btn { display: inline-flex; gap: 8px; align-items: center; border: none; background: transparent; color: #fff; cursor: pointer; padding: 6px 8px; border-radius: 999px; }
+.profile-initial { width: 30px; height: 30px; border-radius: 999px; background: rgba(255,255,255,0.12); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 0.9rem; }
+.profile-name { font-size: 0.95rem; color: #fff; }
+.profile-dropdown { position: absolute; right: 0; top: 46px; min-width: 200px; background: #ffffff; border-radius: 8px; box-shadow: 0 10px 30px rgba(2,6,23,0.12); padding: 8px 6px; display: none; z-index: 60; }
+.profile-dropdown.show { display: block; }
+.profile-item { display: block; text-decoration: none; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-weight: 600; background: transparent; text-align: left; width: 100%; border: none; cursor: pointer; }
+.profile-item:hover { background: #f1f5f9; }
+.profile-logout { width: 100%; }

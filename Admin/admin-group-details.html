@@ -13,13 +13,33 @@
   <!-- PDF Export (jsPDF + AutoTable) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  
 </head>
 <body>
-  <header class="site-header">
+  <!-- Header -->
+  <header class="site-header admin-header">
     <div class="container header-inner">
-      <h1 class="logo">Admin – Group Details</h1>
+      <h1 class="logo">Admin Panel</h1>
+
       <nav class="nav-links">
-        <a href="admin.html" class="nav-link">Admin Home</a>
+        <a href="admin.html" class="nav-link">Dashboard</a>
+        <a href="admin-course-list.html" class="nav-link">Courses</a>
+        <a href="admin-enrollments.html" class="nav-link">Enrollments</a>
+
+        <!-- Admin profile wrapper -->
+        <div id="adminProfileWrapper" class="profile-wrapper">
+          <button id="adminProfileBtn" class="profile-btn" aria-haspopup="true" aria-expanded="false">
+            <span id="adminProfileInitial" class="profile-initial">A</span>
+            <span id="adminProfileName" class="profile-name">Admin</span>
+          </button>
+
+          <div id="adminProfileDropdown" class="profile-dropdown" role="menu" aria-hidden="true">
+            <a id="adminProfileLink" href="admin-profile.html" class="profile-item">My Profile</a>
+            <a id="adminChangePwdLink" href="change-password.html" class="profile-item">Change Password</a>
+            <button id="adminLogoutBtn" class="profile-item profile-logout">Logout</button>
+          </div>
+        </div>
       </nav>
     </div>
   </header>
