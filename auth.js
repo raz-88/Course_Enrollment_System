@@ -225,11 +225,11 @@ auth.onAuthStateChanged(async function(user){
       window.location.href = "Admin/admin.html";
     } else {
       // default to student home
-      window.location.href = "Student_Enrollment/index.html";
+      window.location.href = "index.html";
     }
   } catch (err) {
     console.error("Role-detection error:", err);
     // fallback
-    window.location.href = "Student_Enrollment/index.html";
+    window.location.href = "index.html";
   }
 });

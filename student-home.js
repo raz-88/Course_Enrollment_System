@@ -168,12 +168,12 @@ function renderCourseCards() {
       <div class="course-footer">
         <span class="badge ${badgeClass}">${badgeText}</span>
         <div style="display:flex; gap:6px;">
-          <a href="course-details.html?courseId=${encodeURIComponent(
+          <a href="Student_Enrollment/course-details.html?courseId=${encodeURIComponent(
             courseId
           )}" class="btn btn-secondary">
             View Details
           </a>
-          <a href="enroll.html?courseId=${encodeURIComponent(
+          <a href="Student_Enrollment/enroll.html?courseId=${encodeURIComponent(
             courseId
           )}" class="btn btn-primary ${
             remainingSafe <= 0 && maxSeats > 0 ? "disabled" : ""
@@ -206,7 +206,7 @@ auth.onAuthStateChanged(async (user) => {
     profileInitialEl.textContent = "A";
     // clicking opens auth page
     profileBtn.onclick = function () {
-      window.location.href = "../auth.html";
+      window.location.href = "auth.html";
     };
     // hide dropdown
     profileDropdown.classList.remove("show");
