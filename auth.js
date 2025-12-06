@@ -1,6 +1,5 @@
 // auth.js
 // Combined Login + Register page using Firebase Auth + Realtime DB
-// Paste your firebaseConfig here (same as other files)
 
 const firebaseConfig = {
   apiKey: "AIzaSyBjcNmWxI91atAcnv1ALZM4723Cer6OFGo",
@@ -16,19 +15,17 @@ if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
 
-// DOM
+/* ---------------- DOM ---------------- */
 const tabLogin = document.getElementById("tab-login");
 const tabRegister = document.getElementById("tab-register");
 const loginPane = document.getElementById("loginPane");
 const registerPane = document.getElementById("registerPane");
 
-// login form
 const loginForm = document.getElementById("loginForm");
 const loginEmail = document.getElementById("loginEmail");
 const loginPassword = document.getElementById("loginPassword");
 const loginMsg = document.getElementById("loginMsg");
 
-// register form
 const registerForm = document.getElementById("registerForm");
 const regName = document.getElementById("regName");
 const regEmail = document.getElementById("regEmail");
@@ -36,10 +33,9 @@ const regPassword = document.getElementById("regPassword");
 const regConfirm = document.getElementById("regConfirm");
 const regMsg = document.getElementById("regMsg");
 
-// forgot password link
 const forgotPwd = document.getElementById("forgotPwd");
 
-// helpers
+/* ---------------- HELPERS ---------------- */
 function showPane(which) {
   if (which === "login") {
     tabLogin.classList.add("active");
@@ -56,23 +52,24 @@ function showPane(which) {
   }
 }
 function clearMessages() {
-  loginMsg.textContent = ""; loginMsg.className = "form-message";
-  regMsg.textContent = ""; regMsg.className = "form-message";
+  loginMsg.textContent = "";
+  loginMsg.className = "form-message";
+  regMsg.textContent = "";
+  regMsg.className = "form-message";
 }
 
-// tab clicks
-tabLogin.addEventListener("click", function(){ showPane("login"); });
-tabRegister.addEventListener("click", function(){ showPane("register"); });
+tabLogin.addEventListener("click", () => showPane("login"));
+tabRegister.addEventListener("click", () => showPane("register"));
 
-// email -> safe key (for students node)
-function emailKey(email){
-  return email.trim().toLowerCase().replace(/\./g, ',');
+function emailKey(email) {
+  return email.trim().toLowerCase().replace(/\./g, ",");
 }
 
-// register flow (student only)
-registerForm.addEventListener("submit", async function(e){
+/* ---------------- REGISTER ---------------- */
+registerForm.addEventListener("submit", async function (e) {
   e.preventDefault();
-  regMsg.textContent = ""; regMsg.className = "form-message";
+  regMsg.textContent = "";
+  regMsg.className = "form-message";
 
   const name = regName.value.trim();
   const email = regEmail.value.trim();
@@ -95,28 +92,25 @@ registerForm.addEventListener("submit", async function(e){
     return;
   }
 
-  // Disable UI while working
   const btn = registerForm.querySelector("button[type=submit]");
   btn.disabled = true;
   btn.textContent = "Creating account...";
 
   try {
-    // Create auth user
     const userCred = await auth.createUserWithEmailAndPassword(email, pw);
     const uid = userCred.user.uid;
 
-    // Save user metadata and student profile in DB
     const userRec = {
       uid: uid,
       name: name,
       email: email,
       role: "student",
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      suspended: false          // ⭐ ADDED – ensure new users are not suspended
     };
 
     await db.ref("users/" + uid).set(userRec);
 
-    // student profile keyed by sanitized email for lookup in My Enrollments
     const sk = emailKey(email);
     await db.ref("students/" + sk).set({
       uid: uid,
@@ -127,10 +121,7 @@ registerForm.addEventListener("submit", async function(e){
 
     regMsg.textContent = "Account created. Redirecting…";
     regMsg.classList.add("success");
-
-    // auto-login handled by Firebase auth state change — redirect in onAuthStateChanged below
   } catch (err) {
-    console.error("Register error:", err);
     regMsg.textContent = err.message || "Registration failed.";
     regMsg.classList.add("error");
     btn.disabled = false;
@@ -138,13 +129,15 @@ registerForm.addEventListener("submit", async function(e){
   }
 });
 
-// login flow (student + admin)
-loginForm.addEventListener("submit", async function(e){
+/* ---------------- LOGIN ---------------- */
+loginForm.addEventListener("submit", async function (e) {
   e.preventDefault();
-  loginMsg.textContent = ""; loginMsg.className = "form-message";
+  loginMsg.textContent = "";
+  loginMsg.className = "form-message";
 
   const email = loginEmail.value.trim();
   const pw = loginPassword.value;
+
   if (!email || !pw) {
     loginMsg.textContent = "Please enter email and password.";
     loginMsg.classList.add("error");
@@ -152,13 +145,12 @@ loginForm.addEventListener("submit", async function(e){
   }
 
   const btn = loginForm.querySelector("button[type=submit]");
-  btn.disabled = true; btn.textContent = "Signing in...";
+  btn.disabled = true;
+  btn.textContent = "Signing in...";
 
   try {
-    const cred = await auth.signInWithEmailAndPassword(email, pw);
-    // onAuthStateChanged will handle redirect & role detection
+    await auth.signInWithEmailAndPassword(email, pw);
   } catch (err) {
-    console.error("Login failed:", err);
     loginMsg.textContent = err.message || "Login failed.";
     loginMsg.classList.add("error");
     btn.disabled = false;
@@ -166,70 +158,79 @@ loginForm.addEventListener("submit", async function(e){
   }
 });
 
-// forgot password
-forgotPwd.addEventListener("click", function(e){
+/* ---------------- FORGOT PASSWORD ---------------- */
+forgotPwd.addEventListener("click", function (e) {
   e.preventDefault();
   const email = loginEmail.value.trim() || regEmail.value.trim();
   if (!email) {
-    alert("Enter your registered email in the Email field first and click 'Forgot password'.");
-    return;
+    return alert("Enter your registered email first.");
   }
   if (!confirm("Send password reset email to " + email + "?")) return;
-  auth.sendPasswordResetEmail(email).then(function(){
-    alert("Password reset email sent. Check your inbox.");
-  }).catch(function(err){
-    alert("Error sending reset email: " + (err.message || err));
-  });
+
+  auth.sendPasswordResetEmail(email)
+    .then(() => alert("Password reset email sent."))
+    .catch(err => alert("Error: " + err.message));
 });
 
-// detect auth state changes and route based on role
-auth.onAuthStateChanged(async function(user){
-  if (!user) return; // no logged-in user
+/* ---------------- AUTH STATE + ROLE + SUSPENDED CHECK ---------------- */
+auth.onAuthStateChanged(async function (user) {
+  if (!user) return;
 
-  // After login/registration, decide where to send user
   try {
     const uid = user.uid;
 
-    // read role: check users/{uid}/role OR admins/{uid}
-    const [usersSnap, adminSnap] = await Promise.all([
-      db.ref("users/" + uid + "/role").get(),
-      db.ref("admins/" + uid).get()
-    ]);
-
-    let role = null;
-    if (usersSnap.exists()) {
-      role = usersSnap.val();
-    } else if (adminSnap.exists()) {
-      // legacy admin node present
-      role = "admin";
-    } else {
-      // fallback: check users/{uid} record for role property
-      const userRec = await db.ref("users/" + uid).get();
-      if (userRec.exists()) {
-        const ur = userRec.val();
-        if (ur && ur.role) role = ur.role;
-      }
+    // ⭐ READ USER RECORD FIRST
+    const userSnap = await db.ref("users/" + uid).get();
+    if (!userSnap.exists()) {
+      await auth.signOut();
+      alert("Your account is removed or unavailable.");
+      return;
     }
 
-    // If role still not known, default to student (safe) or fetch from 'students' by email
-    if (!role) {
-      // try to see if a student profile exists
-      const emailKeyVal = emailKey(user.email || "");
-      const sSnap = await db.ref("students/" + emailKeyVal).get();
-      if (sSnap.exists()) role = "student";
+    const profile = userSnap.val();
+
+    // ⭐ BLOCK SUSPENDED USER
+    if (profile.suspended === true) {
+      await auth.signOut();
+      alert("Your account is suspended. Contact admin.");
+      return;
     }
 
-    // Redirect based on role
+    // ROLE DETECTION (your original logic)
+    let role = profile.role || "student";
+
+    // Redirect
     if (role === "admin") {
-      // redirect to admin dashboard
       window.location.href = "Admin/admin.html";
     } else {
-      // default to student home
       window.location.href = "index.html";
     }
+
   } catch (err) {
     console.error("Role-detection error:", err);
-    // fallback
     window.location.href = "index.html";
   }
 });
+
+/* ---------------- 5-MIN INACTIVITY AUTO LOGOUT ---------------- */
+// ⭐ ADDED AUTO LOGOUT SYSTEM
+let inactivityTimer;
+const INACTIVITY_LIMIT = 5 * 60 * 1000; // 5 minutes
+
+function resetInactivityTimer() {
+  clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(() => {
+    auth.signOut().then(() => {
+      alert("You were logged out due to inactivity.");
+      window.location.href = "auth.html";
+    });
+  }, INACTIVITY_LIMIT);
+}
+
+// Events that count as user activity
+["click", "mousemove", "keydown", "scroll", "touchstart"].forEach(evt => {
+  window.addEventListener(evt, resetInactivityTimer);
+});
+
+// Start timer immediately
+resetInactivityTimer();

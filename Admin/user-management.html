@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — User Management</title>
+  <style>
+    :root{
+      --bg:#f6f8fa; --card:#fff; --accent:#2f9e44; --danger:#e6492d; --muted:#6b7280;
+      --glass: rgba(0,0,0,0.04);
+      font-family: Inter, system-ui, Arial, sans-serif;
+    }
+    body{margin:0;background:var(--bg);color:#111;}
+    header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(90deg,#ffffff,#f3faf3);box-shadow:0 1px 0 rgba(0,0,0,0.04);position:sticky;top:0;z-index:3;}
+    header h1{font-size:18px;margin:0;color:#0b6623;}
+    .top-actions{display:flex;gap:12px;align-items:center;}
+    .stat{background:var(--card);padding:10px 14px;border-radius:8px;box-shadow:0 6px 18px rgba(12,12,12,0.03);display:flex;flex-direction:column;align-items:flex-start;min-width:160px;}
+    .stat strong{font-size:20px;color:var(--accent);display:block;}
+    .search-bar{display:flex;gap:8px;align-items:center;}
+    input[type="search"]{padding:8px 10px;border-radius:8px;border:1px solid #e6e6e6;min-width:300px;}
+    button{background:var(--accent);color:#fff;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600;}
+    button.secondary{background:#fff;color:var(--accent);border:1px solid var(--accent);}
+    main{padding:20px;max-width:1200px;margin:0 auto;}
+    .card{background:var(--card);padding:16px;border-radius:12px;box-shadow:0 6px 24px rgba(12,12,12,0.04);}
+    table{width:100%;border-collapse:collapse;margin-top:12px;}
+    th,td{padding:10px 8px;text-align:left;border-bottom:1px solid #f1f1f1;font-size:14px;vertical-align:middle;}
+    th{color:var(--muted);font-weight:600;}
+    .actions button{margin-right:6px;padding:6px 8px;border-radius:6px;border:0;font-size:13px;cursor:pointer;}
+    .actions .view{background:#e6f4ea;color:#064e2b;}
+    .actions .edit{background:#fff;border:1px solid #ccead6;color:#0b6623;}
+    .actions .delete{background:#fff;border:1px solid #f5c6c3;color:var(--danger);}
+    .actions .suspend{background:#fff;border:1px solid #ffd6d1;color:var(--danger);}
+    .actions .reset{background:#fff;border:1px solid #c6d8ff;color:#084298;}
+    .message-box{position:fixed;right:20px;bottom:20px;padding:12px 16px;border-radius:8px;display:none;box-shadow:0 8px 30px rgba(2,6,23,0.12);z-index:1000;}
+    .message-box.success{background:#ecfdf3;color:#065f46;}
+    .message-box.error{background:#fff1f2;color:#9b1c1c;}
+    /* Modal */
+    .modal{position:fixed;inset:0;background:rgba(10,10,10,0.45);display:none;align-items:center;justify-content:center;padding:16px;z-index:1000;}
+    .modal.active{display:flex;}
+    .modal .panel{background:var(--card);width:100%;max-width:720px;border-radius:12px;padding:16px;box-shadow:0 16px 50px rgba(2,6,23,0.18);max-height:90vh;overflow:auto;}
+    .modal .panel h3{margin-top:0;}
+    .form-row{display:flex;gap:8px;margin-bottom:10px;}
+    .form-row .col{flex:1;}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px;}
+    input[type="text"],input[type="email"],input[type="password"],select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #e6e6e6;}
+    .modal .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;}
+    .small-muted{font-size:13px;color:var(--muted);}
+    @media (max-width:760px){input[type="search"]{min-width:140px;} .form-row{flex-direction:column}}
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Admin • User Management</h1>
+  <div class="top-actions">
+    <div class="stat">
+      <span class="small-muted">Total Registered</span>
+      <strong id="total-count">0</strong>
+    </div>
+    <div class="search-bar">
+      <input id="search-input" type="search" placeholder="Search by name or email..." />
+      <button id="open-register" class="">Add user</button>
+      <button id="refresh-btn" class="secondary">Refresh</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h2 style="margin:0;font-size:16px;color:#0b6623">Registered Users</h2>
+      <div class="small-muted">Manage users, reset passwords, suspend/reactivate, and edit profiles</div>
+    </div>
+
+    <table aria-label="Users table">
+      <thead>
+        <tr>
+          <th style="width:12%;">UID</th>
+          <th style="width:22%;">Name</th>
+          <th style="width:22%;">Email</th>
+          <th style="width:12%;">Role</th>
+          <th style="width:10%;">Status</th>
+          <th style="width:22%;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="users-tbody">
+        <!-- rows inserted here -->
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<!-- View Modal -->
+<div id="view-modal" class="modal">
+  <div class="panel">
+    <h3>View Profile</h3>
+    <div id="view-box" class="card" style="padding:12px;background:var(--glass);border-radius:8px;"></div>
+    <div style="text-align:right;margin-top:12px;"><button onclick="closeModal('view')">Close</button></div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="edit-modal" class="modal">
+  <div class="panel">
+    <h3>Edit Profile</h3>
+    <form id="edit-form">
+      <input id="edit-uid" type="hidden" />
+      <div class="form-row">
+        <div class="col">
+          <label for="edit-name">Name</label>
+          <input id="edit-name" type="text" />
+        </div>
+        <div class="col">
+          <label for="edit-email">Email</label>
+          <input id="edit-email" type="email" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="col">
+          <label for="edit-phone">Phone</label>
+          <input id="edit-phone" type="text" />
+        </div>
+        <div class="col">
+          <label for="edit-mobile">Mobile</label>
+          <input id="edit-mobile" type="text" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="col">
+          <label for="edit-address">Address</label>
+          <input id="edit-address" type="text" />
+        </div>
+        <div class="col">
+          <label for="edit-role">Role</label>
+          <select id="edit-role">
+            <option>Customer</option>
+            <option>Admin</option>
+            <option>Staff</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="col">
+          <label for="edit-wallet">Wallet</label>
+          <input id="edit-wallet" type="text" />
+        </div>
+        <div class="col">
+          <label for="edit-status">Status</label>
+          <select id="edit-status">
+            <option value="active">active</option>
+            <option value="suspended">suspended</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="foot">
+        <button type="button" onclick="closeModal('edit')" class="secondary">Cancel</button>
+        <button type="submit">Save changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Register Modal -->
+<div id="register-modal" class="modal">
+  <div class="panel">
+    <h3>Register New User</h3>
+    <form id="register-form">
+      <div class="form-row">
+        <div class="col">
+          <label for="reg-name">Full name</label>
+          <input id="reg-name" type="text" required />
+        </div>
+        <div class="col">
+          <label for="reg-email">Email</label>
+          <input id="reg-email" type="email" required />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="col">
+          <label for="reg-password">Password</label>
+          <input id="reg-password" type="password" required />
+        </div>
+        <div class="col">
+          <label for="reg-role">Role</label>
+          <select id="reg-role">
+            <option>Customer</option>
+            <option>Staff</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="foot">
+        <button type="button" onclick="closeModal('register')" class="secondary">Cancel</button>
+        <button type="submit">Create account</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="message-box" class="message-box success">Message</div>
+
+<!-- Firebase SDKs (v8 syntax used by your script) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+/* ============================
+   Your Firebase initialization
+   ============================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBjcNmWxI91atAcnv1ALZM4723Cer6OFGo",
+  authDomain: "student-enrollment-39c2f.firebaseapp.com",
+  databaseURL: "https://student-enrollment-39c2f-default-rtdb.firebaseio.com",
+  projectId: "student-enrollment-39c2f",
+  storageBucket: "student-enrollment-39c2f.firebasestorage.app",
+  messagingSenderId: "810600465736",
+  appId: "1:810600465736:web:953640e6f15a530ee25f7d"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+/* ================
+   Element references
+   ================ */
+const tbody = document.getElementById("users-tbody");
+const searchInput = document.getElementById("search-input");
+const messageBox = document.getElementById("message-box");
+const totalCountEl = document.getElementById("total-count");
+
+const editUID = document.getElementById("edit-uid");
+const editName = document.getElementById("edit-name");
+const editEmail = document.getElementById("edit-email");
+const editPhone = document.getElementById("edit-phone");
+const editMobile = document.getElementById("edit-mobile");
+const editAddress = document.getElementById("edit-address");
+const editWallet = document.getElementById("edit-wallet");
+const editRole = document.getElementById("edit-role");
+const editStatus = document.getElementById("edit-status");
+
+const allModals = {
+  view: document.getElementById("view-modal"),
+  edit: document.getElementById("edit-modal"),
+  register: document.getElementById("register-modal")
+};
+
+function openModal(type){
+  allModals[type].classList.add("active");
+}
+function closeModal(type){
+  allModals[type].classList.remove("active");
+}
+
+function showMessage(text, type = "success"){
+  messageBox.textContent = text;
+  messageBox.className = "message-box " + (type === "error" ? "error" : "success");
+  messageBox.style.display = "block";
+  setTimeout(() => { messageBox.style.display = "none"; }, 3500);
+}
+
+/* ================
+   Data + Fetching
+   ================ */
+let allUsers = [];
+
+function fetchUsers(){
+  db.ref("users").once("value", snapshot => {
+    allUsers = [];
+    tbody.innerHTML = "";
+    snapshot.forEach(child => {
+      const uid = child.key;
+      const user = child.val();
+      allUsers.push({ uid, ...user });
+    });
+    // update total
+    totalCountEl.textContent = allUsers.length;
+    renderTable(allUsers);
+  }, err => {
+    showMessage("Error reading users: " + (err && err.message), "error");
+  });
+}
+
+function renderTable(users){
+  tbody.innerHTML = "";
+  users.forEach(user => {
+    const isSuspended = !!user.suspended;
+    const tr = document.createElement("tr");
+    // escape values for simple HTML safety
+    const name = user.name ? escapeHtml(String(user.name)) : '-';
+    const email = user.email ? escapeHtml(String(user.email)) : '-';
+    const role = user.role ? escapeHtml(String(user.role)) : '-';
+    const uidCell = escapeHtml(String(user.uid));
+    tr.innerHTML = `
+      <td style="word-break:break-all">${uidCell}</td>
+      <td>${name}</td>
+      <td>${email}</td>
+      <td>${role}</td>
+      <td>${isSuspended ? "Suspended" : "Active"}</td>
+      <td class="actions">
+        <button class="view" onclick="viewUser('${user.uid}')">View</button>
+        <button class="edit" onclick="editUser('${user.uid}')">Edit</button>
+        <button class="delete" onclick="deleteUser('${user.uid}')">Delete</button>
+        <button class="reset" onclick="resetPassword('${user.email || ''}')">Reset</button>
+        <button class="suspend" onclick="toggleSuspend('${user.uid}', ${isSuspended})">
+          ${isSuspended ? "Reactivate" : "Suspend"}
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+/* =================
+   View / Edit logic
+   ================= */
+function viewUser(uid){
+  db.ref("users/" + uid).once("value").then(snap => {
+    const u = snap.val() || {};
+    const content = Object.entries(u).map(([key, val]) => {
+      const display = (val !== undefined && val !== null && val !== "") ? escapeHtml(String(val)) : "-";
+      return `<p><strong>${escapeHtml(key)}:</strong> ${display}</p>`;
+    }).join("");
+    document.getElementById("view-box").innerHTML = content;
+    openModal("view");
+  }).catch(err => showMessage("Error: " + err.message, "error"));
+}
+
+function editUser(uid){
+  db.ref("users/" + uid).once("value").then(uSnap => {
+    const u = uSnap.val() || {};
+    editUID.value = uid;
+    editName.value = u.name || "";
+    editEmail.value = u.email || "";
+    editPhone.value = u.phone || "";
+    editMobile.value = u.mobile || "";
+    editAddress.value = u.address || "";
+    editWallet.value = u.wallet || "";
+    editRole.value = u.role || "Customer";
+    editStatus.value = u.suspended ? "suspended" : "active";
+    openModal("edit");
+  }).catch(err => showMessage("Error: " + err.message, "error"));
+}
+
+/* Save Edited Profile */
+document.getElementById("edit-form").addEventListener("submit", e => {
+  e.preventDefault();
+  const uid = editUID.value;
+  const updatedData = {
+    name: editName.value,
+    email: editEmail.value,
+    phone: editPhone.value,
+    mobile: editMobile.value,
+    address: editAddress.value,
+    wallet: editWallet.value,
+    role: editRole.value,
+    suspended: editStatus.value === "suspended"
+  };
+  db.ref("users/" + uid).update(updatedData).then(() => {
+    showMessage("Profile updated successfully.");
+    closeModal("edit");
+    fetchUsers();
+  }).catch(err => {
+    showMessage("Error updating profile: " + err.message, "error");
+  });
+});
+
+/* Register New User */
+document.getElementById("register-form").addEventListener("submit", e => {
+  e.preventDefault();
+  const name = document.getElementById("reg-name").value.trim();
+  const email = document.getElementById("reg-email").value.trim();
+  const password = document.getElementById("reg-password").value.trim();
+  const role = document.getElementById("reg-role").value;
+
+  if (!name || !email || !password) {
+    return showMessage("Please fill all required fields.", "error");
+  }
+
+  auth.createUserWithEmailAndPassword(email, password).then(cred => {
+    return db.ref("users/" + cred.user.uid).set({
+      name,
+      email,
+      role,
+      registeredOn: new Date().toLocaleString(),
+      suspended: false
+    });
+  }).then(() => {
+    showMessage("User registered successfully.");
+    closeModal("register");
+    document.getElementById("register-form").reset();
+    fetchUsers();
+  }).catch(err => {
+    showMessage("Error registering user: " + err.message, "error");
+  });
+});
+
+/* Delete User */
+function deleteUser(uid){
+  if (confirm("Are you sure you want to delete this user?")) {
+    db.ref("users/" + uid).remove().then(() => {
+      showMessage("User deleted successfully.");
+      fetchUsers();
+    }).catch(err => {
+      showMessage("Error deleting user: " + err.message, "error");
+    });
+  }
+}
+
+/* Suspend/Reactivate */
+function toggleSuspend(uid, currentStatus){
+  const newStatus = !currentStatus;
+  const message = newStatus ? "suspend" : "reactivate";
+  if (confirm(`Are you sure you want to ${message} this user?`)) {
+    db.ref("users/" + uid).update({ suspended: newStatus }).then(() => {
+      showMessage(`User ${newStatus ? "suspended" : "reactivated"} successfully.`);
+      fetchUsers();
+    }).catch(err => {
+      showMessage("Error changing status: " + err.message, "error");
+    });
+  }
+}
+
+/* Password Reset */
+function resetPassword(email){
+  if (!email) {
+    return showMessage("No email available for reset.", "error");
+  }
+  auth.sendPasswordResetEmail(email).then(() => {
+    showMessage("Reset email sent to " + email);
+  }).catch(err => {
+    showMessage("Error: " + err.message, "error");
+  });
+}
+
+/* Live Search */
+searchInput.addEventListener("input", () => {
+  const q = searchInput.value.toLowerCase();
+  const filtered = allUsers.filter(u =>
+    (u.name && u.name.toLowerCase().includes(q)) ||
+    (u.email && u.email.toLowerCase().includes(q))
+  );
+  renderTable(filtered);
+});
+
+/* Small helpers & controls */
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]; });
+}
+
+document.getElementById("open-register").addEventListener("click", () => openModal("register"));
+document.getElementById("refresh-btn").addEventListener("click", fetchUsers);
+
+// close modal when clicking outside panel
+document.querySelectorAll('.modal').forEach(mod => {
+  mod.addEventListener('click', (e) => {
+    if (e.target === mod) mod.classList.remove('active');
+  });
+});
+
+/* Initial fetch */
+fetchUsers();
+</script>
+
+</body>
+</html>
