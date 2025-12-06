@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>User Management - Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="admin-users.css" />
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <!-- jsPDF + autoTable for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<body>
+
+  <!-- Header -->
+  <header class="site-header admin-header">
+    <div class="container header-inner">
+      <h1 class="logo">Admin Panel</h1>
+
+      <nav class="nav-links">
+        <a href="admin.html" class="nav-link">Dashboard</a>
+        <a href="admin-users.html" class="nav-link">User Management</a>
+        <a href="admin-course-list.html" class="nav-link">Courses</a>
+        <a href="admin-enrollments.html" class="nav-link">Enrollments</a>
+
+        <!-- Admin profile wrapper -->
+        <div id="adminProfileWrapper" class="profile-wrapper">
+          <button id="adminProfileBtn" class="profile-btn" aria-haspopup="true" aria-expanded="false">
+            <span id="adminProfileInitial" class="profile-initial">A</span>
+            <span id="adminProfileName" class="profile-name">Admin</span>
+          </button>
+
+          <div id="adminProfileDropdown" class="profile-dropdown" role="menu" aria-hidden="true">
+            <a id="adminProfileLink" href="admin-profile.html" class="profile-item">My Profile</a>
+            <a id="adminChangePwdLink" href="change-password.html" class="profile-item">Change Password</a>
+            <button id="adminLogoutBtn" class="profile-item profile-logout">Logout</button>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+        <h2 style="margin:0;color:#1b5e20;">User Management</h2>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="search-input" type="search" placeholder="Search user..." />
+          <button id="refresh-btn" class="btn-primary">Refresh</button>
+          <button id="btn-add" class="btn-secondary">Register</button>
+          <button id="btn-export-csv" class="btn-secondary">Download Excel</button>
+          <button id="btn-export-pdf" class="btn-secondary">Download PDF</button>
+        </div>
+      </div>
+
+      <p class="note">Total Users: <strong id="total-users">0</strong></p>
+
+        <table class="data-table" id="users-table">
+            <thead>
+                <tr>
+                <th>Sn.</th>
+                <th>UID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Created On</th>
+                <th style="width:220px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+        </table>
+
+    </section>
+  </main>
+
+  <!-- VIEW USER MODAL -->
+  <div id="view-modal" class="modal">
+    <div class="modal-panel">
+      <h3>User Details</h3>
+      <div id="view-box"></div>
+      <div class="modal-actions">
+        <button onclick="closeModal('view-modal')" class="btn-primary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT USER MODAL -->
+  <div id="edit-modal" class="modal">
+    <div class="modal-panel">
+      <h3>Edit User</h3>
+
+      <form id="edit-form">
+        <input id="edit-uid" type="hidden" />
+
+        <label>Name</label>
+        <input id="edit-name" type="text" />
+
+        <label>Email</label>
+        <input id="edit-email" type="email" />
+
+        <label>Role</label>
+        <select id="edit-role">
+          <option value="student">Student</option>
+          <option value="staff">Staff</option>
+          <option value="admin">Admin</option>
+        </select>
+
+        <label>Status</label>
+        <select id="edit-status">
+          <option value="active">Active</option>
+          <option value="suspended">Suspended</option>
+        </select>
+
+        <div class="modal-actions">
+          <button type="button" onclick="closeModal('edit-modal')" class="btn-secondary">Cancel</button>
+          <button type="submit" class="btn-primary">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD USER MODAL (Register) -->
+  <div id="add-modal" class="modal">
+    <div class="modal-panel">
+      <h3>Register New User</h3>
+      <form id="add-form">
+        <label>Name</label>
+        <input id="add-name" type="text" required />
+        <label>Email</label>
+        <input id="add-email" type="email" required />
+        <label>Password</label>
+        <input id="add-password" type="password" required />
+        <label>Role</label>
+        <select id="add-role">
+          <option value="student">Student</option>
+          <option value="staff">Admin</option>
+        </select>
+
+        <div class="modal-actions">
+          <button type="button" onclick="closeModal('add-modal')" class="btn-secondary">Cancel</button>
+          <button type="submit" class="btn-primary">Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="message-box" class="message-box"></div>
+
+  <script src="admin-users.js"></script>
+
+</body>
+</html>
