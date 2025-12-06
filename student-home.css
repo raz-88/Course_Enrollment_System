@@ -274,6 +274,7 @@ body {
   padding: 8px 6px;
   box-shadow: 0 10px 30px rgba(2,6,23,0.12);
   display: none;
+  z-index: 999;
 }
 
 .profile-dropdown.show {
@@ -299,19 +300,40 @@ body {
 /* RESPONSIVE OPTIMIZED */
 /* ============================= */
 
-/* Mobile (up to 600px) */
+/* ============================= */
+/* MOBILE (Up to 600px) */
+/* ============================= */
 @media (max-width: 600px) {
+
+  /* Header stacked */
   .header-inner {
     flex-direction: column;
     align-items: flex-start;
+    gap: 6px;
   }
 
+  /* ONE card per row on mobile */
   .courses-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+    gap: 16px;
   }
 
   .course-card {
-    padding: 14px;
+    width: 100%;
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  /* Buttons vertical on mobile */
+  .course-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .course-footer a {
+    width: 100%;
+    text-align: center;
   }
 
   .hero-text h2 {
@@ -323,11 +345,18 @@ body {
   }
 
   .profile-btn {
-    padding: 4px;
+    padding: 4px 6px;
+  }
+
+  .profile-dropdown {
+    width: 80%;
+    right: 10px;
   }
 }
 
-/* Tablets (600px–900px) */
+/* ============================= */
+/* TABLETS (600px–900px) */
+/* ============================= */
 @media (max-width: 900px) {
   .courses-grid {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

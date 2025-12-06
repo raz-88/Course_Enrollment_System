@@ -1,5 +1,6 @@
 // course-details.js
 // Shows course info and topic list with live used/max counts
+
 // Firebase config (your project)
 const firebaseConfig = {
   apiKey: "AIzaSyBjcNmWxI91atAcnv1ALZM4723Cer6OFGo",
@@ -18,7 +19,9 @@ const courseTitleEl = document.getElementById("courseTitle");
 const courseDescEl = document.getElementById("courseDesc");
 const courseMetaEl = document.getElementById("courseMeta");
 const topicsListEl = document.getElementById("topicsList");
-const enrollCourseBtn = document.getElementById("enrollCourseBtn");
+
+// ⛔ Removed enrollCourseBtn — not required
+// const enrollCourseBtn = document.getElementById("enrollCourseBtn");
 
 function getCourseIdFromUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -74,18 +77,23 @@ async function loadCourseDetails(courseId) {
     courseTitleEl.textContent = course.name || "Untitled Course";
     courseDescEl.textContent = course.description || "No description provided.";
 
-    // meta: start date, duration, seats
+    // meta
     const startDate = course.startDate || "";
     const duration = course.duration || "";
     const maxSeats = course.maxSeats || 0;
-    // determine filledSeats: prefer stored filledSeats, else count enrollments (total)
-    let filledSeats = typeof course.filledSeats === "number" ? course.filledSeats : Object.keys(enrollObj).length;
+
+    let filledSeats = typeof course.filledSeats === "number"
+      ? course.filledSeats
+      : Object.keys(enrollObj).length;
+
     const remaining = maxSeats > 0 ? maxSeats - filledSeats : 0;
     const remainingSafe = remaining < 0 ? 0 : remaining;
 
     const metaParts = [];
-    if (startDate) metaParts.push("<span><strong>Start:</strong> " + escapeHtml(startDate) + "</span>");
-    if (duration) metaParts.push("<span><strong>Duration:</strong> " + escapeHtml(duration) + "</span>");
+    if (startDate)
+      metaParts.push("<span><strong>Start:</strong> " + escapeHtml(startDate) + "</span>");
+    if (duration)
+      metaParts.push("<span><strong>Duration:</strong> " + escapeHtml(duration) + "</span>");
     if (maxSeats > 0) {
       metaParts.push("<span class='seat-line'><strong>Seats:</strong> " + filledSeats + "/" + maxSeats + " enrolled</span>");
     } else {
@@ -93,18 +101,18 @@ async function loadCourseDetails(courseId) {
     }
     courseMetaEl.innerHTML = metaParts.join("");
 
-    // Top-level enroll button goes to enroll page (student may still choose topic there)
-    enrollCourseBtn.href = "enroll.html?courseId=" + encodeURIComponent(courseId);
+    // ⛔ Removed this completely:
+    // enrollCourseBtn.href = "enroll.html?courseId=" + encodeURIComponent(courseId);
 
     // Topics list
     const topicIds = Object.keys(topicsObj);
     if (!topicIds.length) {
-      topicsListEl.innerHTML = "<div class='note'>No topics are configured for this course yet.</div>";
+      topicsListEl.innerHTML = "<div class='note'>No topics configured for this course yet.</div>";
       return;
     }
 
-    // Render topics sorted by insertion order (keys)
     topicsListEl.innerHTML = "";
+
     topicIds.forEach(function (tid) {
       const t = topicsObj[tid] || {};
       const title = t.title || "Untitled Topic";
@@ -126,10 +134,7 @@ async function loadCourseDetails(courseId) {
       const metaEl = document.createElement("div");
       metaEl.className = "topic-meta";
       metaEl.innerHTML =
-        "Capacity: " +
-        escapeHtml(String(used)) +
-        " / " +
-        escapeHtml(String(maxPeople));
+        "Capacity: " + used + " / " + maxPeople;
 
       const capacityEl = document.createElement("div");
       capacityEl.className = "topic-capacity";
@@ -138,25 +143,30 @@ async function loadCourseDetails(courseId) {
       } else if (remainingTopic <= 0) {
         capacityEl.innerHTML = "<span class='status-badge status-suspended'>Full</span>";
       } else if (remainingTopic <= Math.max(1, Math.floor(maxPeople * 0.2))) {
-        capacityEl.innerHTML = "<span class='status-badge status-active'>Few seats left: " + escapeHtml(String(remainingTopic)) + "</span>";
+        capacityEl.innerHTML =
+          "<span class='status-badge status-active'>Few seats left: " +
+          remainingTopic +
+          "</span>";
       } else {
-        capacityEl.innerHTML = "<span class='status-badge status-active'>Seats left: " + escapeHtml(String(remainingTopic)) + "</span>";
+        capacityEl.innerHTML =
+          "<span class='status-badge status-active'>Seats left: " +
+          remainingTopic +
+          "</span>";
       }
 
       left.appendChild(titleEl);
       left.appendChild(metaEl);
       left.appendChild(capacityEl);
 
+      /* Topic actions */
       const actions = document.createElement("div");
       actions.className = "topic-actions";
 
-      // View details (could expand later)
       const viewBtn = document.createElement("a");
       viewBtn.className = "btn btn-secondary";
       viewBtn.href = "#";
       viewBtn.textContent = "View";
 
-      // Enroll button -> pass both courseId and topicId to enroll page
       const enrollBtn = document.createElement("a");
       enrollBtn.className = "btn btn-primary";
       enrollBtn.href =
@@ -180,15 +190,14 @@ async function loadCourseDetails(courseId) {
 
       topicsListEl.appendChild(topicRow);
     });
-
   } catch (err) {
     console.error(err);
     courseTitleEl.textContent = "Error loading course";
-    courseDescEl.textContent = "There was a problem loading course details. Try again later.";
+    courseDescEl.textContent = "There was a problem loading details.";
   }
 }
 
-/* Small helper to escape text for safety in innerHTML contexts */
+/* Helper */
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, "&amp;")

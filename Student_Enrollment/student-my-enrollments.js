@@ -1,4 +1,6 @@
-// student-my-enrollments.js
+// -----------------------------
+// Firebase Init
+// -----------------------------
 const firebaseConfig = {
   apiKey: "AIzaSyBjcNmWxI91atAcnv1ALZM4723Cer6OFGo",
   authDomain: "student-enrollment-39c2f.firebaseapp.com",
@@ -11,148 +13,147 @@ const firebaseConfig = {
 
 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const auth = firebase.auth();
 
-const myEmailInput = document.getElementById("myEmail");
-const loadBtn = document.getElementById("loadEnrollmentsBtn");
-const clearBtn = document.getElementById("clearBtn");
-const listEl = document.getElementById("myEnrollmentsList");
+const myListEl = document.getElementById("myEnrollmentsList");
 
-function emailKey(email) { return email.trim().toLowerCase().replace(/\./g, ','); }
+function escapeHtml(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
-loadBtn.addEventListener("click", async function () {
-  const email = myEmailInput.value.trim();
-  if (!email) { alert("Enter your email"); return; }
-  listEl.innerHTML = "<p class='muted'>Loading...</p>";
+// -----------------------------
+// Require Login
+// -----------------------------
+auth.onAuthStateChanged(async (user) => {
+  if (!user) {
+    window.location.href = "../auth.html";
+    return;
+  }
+  loadMyEnrollments(user.email);
+});
 
-  // Approach: iterate all courses under /enrollments and find matches.
+// -----------------------------
+// Load Enrollments for Logged User
+// -----------------------------
+async function loadMyEnrollments(email) {
+  myListEl.innerHTML = "<p>Loading your enrollments...</p>";
+
   try {
-    const enrollmentsSnap = await db.ref("enrollments").get();
-    if (!enrollmentsSnap.exists()) {
-      listEl.innerHTML = "<p class='muted'>No enrollments found.</p>";
+    const enrollSnap = await db.ref("enrollments").get();
+    if (!enrollSnap.exists()) {
+      myListEl.innerHTML = "<p>No enrollments found.</p>";
       return;
     }
 
-    const results = []; // {courseId, enrollId, data, courseName}
-    const enrollData = enrollmentsSnap.val() || {};
-    // iterate courses
-    await Promise.all(Object.keys(enrollData).map(async function (courseId) {
-      const courseEnrolls = enrollData[courseId] || {};
-      // iterate enrollments
-      Object.keys(courseEnrolls).forEach(function (eid) {
-        const ed = courseEnrolls[eid] || {};
-        if (ed.email && ed.email.trim().toLowerCase() === email.toLowerCase()) {
-          results.push({ courseId: courseId, enrollId: eid, data: ed });
+    const enrollData = enrollSnap.val();
+    const results = [];
+
+    Object.keys(enrollData).forEach(courseId => {
+      const courseEnrollments = enrollData[courseId];
+      Object.keys(courseEnrollments).forEach(enId => {
+        const en = courseEnrollments[enId];
+        if (en.email === email) {
+          results.push({ courseId, enId, ...en });
         }
       });
-      // fetch course name (optional)
-    }));
+    });
 
     if (!results.length) {
-      listEl.innerHTML = "<p class='muted'>No enrollments found for this email.</p>";
+      myListEl.innerHTML = "<p>You have no enrollments yet.</p>";
       return;
     }
 
-    // fetch course names in batch
-    const courseIds = Array.from(new Set(results.map(r => r.courseId)));
-    const coursePromises = courseIds.map(id => db.ref("courses/" + id + "/name").get());
-    const courseSnaps = await Promise.all(coursePromises);
-    const courseNameMap = {};
-    courseSnaps.forEach((s, idx) => {
-      if (s.exists()) courseNameMap[courseIds[idx]] = s.val();
-      else courseNameMap[courseIds[idx]] = courseIds[idx];
-    });
+    // Load course names + group membership
+    const courseSnap = await db.ref("courses").get();
+    const courses = courseSnap.exists() ? courseSnap.val() : {};
 
-    // build UI list
-    listEl.innerHTML = "";
-    results.sort((a,b) => (a.data.timestamp || 0) - (b.data.timestamp || 0));
-    results.forEach(function (r, index) {
+    const groupsSnap = await db.ref("groups").get();
+    const groups = groupsSnap.exists() ? groupsSnap.val() : {};
+
+    myListEl.innerHTML = "";
+
+    results.forEach(item => {
+      const courseName = courses[item.courseId]?.name || "Unknown Course";
+      const topicTitle = item.topicTitle || "Unknown Topic";
+      const dateStr = item.timestamp
+        ? new Date(item.timestamp).toLocaleString()
+        : "";
+
+      // Find group(s)
+      let groupName = "-";
+      if (groups[item.courseId]) {
+        Object.keys(groups[item.courseId]).forEach(gid => {
+          if (groups[item.courseId][gid].members &&
+              groups[item.courseId][gid].members[item.enId]) {
+            const gName = groups[item.courseId][gid].groupName || "Group";
+            groupName = gName;
+          }
+        });
+      }
+
       const row = document.createElement("div");
       row.className = "enroll-row";
 
-      const left = document.createElement("div");
-      left.className = "enroll-left";
-      const nameLine = document.createElement("div");
-      nameLine.innerHTML = "<strong>" + escapeHtml(r.data.name || "") + "</strong> — <span class='muted'>" + escapeHtml(courseNameMap[r.courseId] || r.courseId) + "</span>";
-      const metaLine = document.createElement("div");
-      const dateStr = r.data.timestamp ? new Date(r.data.timestamp).toLocaleString() : "-";
-      metaLine.className = "muted";
-      metaLine.textContent = (r.data.topicTitle ? r.data.topicTitle + " • " : "") + dateStr;
+      row.innerHTML = `
+        <div class="enroll-left">
+          <div class="en-title">${escapeHtml(courseName)}</div>
+          <div class="muted">Topic: ${escapeHtml(topicTitle)}</div>
+          <div class="muted">Enrolled: ${escapeHtml(dateStr)}</div>
+          <div class="muted">Group: ${escapeHtml(groupName)}</div>
+        </div>
 
-      left.appendChild(nameLine);
-      left.appendChild(metaLine);
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <a class="btn btn-secondary"
+             href="course-details.html?courseId=${item.courseId}">
+             View Details
+          </a>
 
-      const right = document.createElement("div");
-      right.style.display = "flex"; right.style.gap = "8px"; right.style.alignItems = "center";
+          <button class="btn-ghost" onclick="cancelEnroll('${item.courseId}', '${item.enId}')">
+            Cancel
+          </button>
+        </div>
+      `;
 
-      const cancelBtn = document.createElement("button");
-      cancelBtn.className = "btn-ghost";
-      cancelBtn.textContent = "Cancel";
-      cancelBtn.addEventListener("click", function () { confirmCancelEnrollment(r.courseId, r.enrollId); });
-
-      right.appendChild(cancelBtn);
-      row.appendChild(left);
-      row.appendChild(right);
-      listEl.appendChild(row);
+      myListEl.appendChild(row);
     });
 
   } catch (err) {
     console.error(err);
-    listEl.innerHTML = "<p class='muted'>Error loading enrollments.</p>";
+    myListEl.innerHTML = "<p>Error loading enrollments.</p>";
   }
-});
+}
 
-clearBtn.addEventListener("click", function () {
-  myEmailInput.value = "";
-  listEl.innerHTML = "";
-});
-
-// Cancel flow: delete enrollment and decrement courses/{courseId}/filledSeats transactionally
-async function confirmCancelEnrollment(courseId, enrollId) {
-  if (!confirm("Cancel this enrollment? This will free the seat.")) return;
+// -----------------------------
+// Cancel Enrollment
+// -----------------------------
+async function cancelEnroll(courseId, enId) {
+  if (!confirm("Are you sure you want to cancel your enrollment?")) return;
 
   try {
-    // Read membership for any groups containing this enrollment (to remove)
-    const groupsSnap = await db.ref("groups/" + courseId).get();
     const updates = {};
-    // delete enrollment
-    updates["enrollments/" + courseId + "/" + enrollId] = null;
+    updates[`enrollments/${courseId}/${enId}`] = null;
 
-    // remove from groups if present
-    if (groupsSnap.exists()) {
-      groupsSnap.forEach(function (child) {
-        const groupId = child.key;
-        const g = child.val() || {};
-        const members = g.members || {};
-        if (members[enrollId]) {
-          updates["groups/" + courseId + "/" + groupId + "/members/" + enrollId] = null;
+    // Remove from groups
+    const grpSnap = await db.ref(`groups/${courseId}`).get();
+    if (grpSnap.exists()) {
+      grpSnap.forEach(g => {
+        if (g.val().members && g.val().members[enId]) {
+          updates[`groups/${courseId}/${g.key}/members/${enId}`] = null;
         }
       });
     }
 
-    // apply deletes first
     await db.ref().update(updates);
+    alert("Enrollment canceled successfully.");
+    window.location.reload();
 
-    // decrement filledSeats via transaction safely
-    const courseRef = db.ref("courses/" + courseId + "/filledSeats");
-    await courseRef.transaction(function (current) {
-      const cur = typeof current === "number" ? current : null;
-      if (cur === null) {
-        // try to avoid negative: set to 0 if unknown
-        return 0;
-      }
-      const next = cur - 1;
-      return next < 0 ? 0 : next;
-    }, false);
-
-    alert("Enrollment cancelled and seat freed.");
-    // refresh the list for the same email
-    document.getElementById("loadEnrollmentsBtn").click();
   } catch (err) {
     console.error(err);
-    alert("Error cancelling enrollment. Try again.");
+    alert("Error canceling enrollment. Try again.");
   }
-}
-
-function escapeHtml(s) {
-  return String(s || "").replace(/&/g, "&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 }

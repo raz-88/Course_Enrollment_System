@@ -4,46 +4,58 @@
   <meta charset="utf-8" />
   <title>My Enrollments</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+
   <link rel="stylesheet" href="../student-home.css" />
+
   <style>
-    /* Small styles for the page */
     .center-box { max-width:720px; margin:18px auto; padding:12px; }
     .small-note { color:#6b7280; margin-bottom:10px; }
-    .enroll-row { display:flex; gap:12px; align-items:center; justify-content:space-between; padding:8px; border-radius:10px; background:#fff; box-shadow:0 1px 6px rgba(15,23,42,0.04); margin-bottom:8px; }
+    .enroll-row {
+      display:flex; gap:12px; align-items:center; justify-content:space-between;
+      padding:12px; border-radius:12px; background:#fff;
+      box-shadow:0 1px 6px rgba(15,23,42,0.05);
+      margin-bottom:12px;
+    }
     .enroll-left { flex:1; min-width:0; }
+    .en-title { font-size:1rem; font-weight:600; color:#111827; }
     .muted { color:#6b7280; font-size:0.9rem; }
-    .btn-ghost { background:transparent; border:1px solid #e5e7eb; padding:6px 10px; border-radius:8px; cursor:pointer; }
+    .btn-ghost {
+      background:transparent; color:#1b5e20;
+      border:1px solid #bbf7d0; padding:6px 12px;
+      border-radius:8px; cursor:pointer;
+      font-size:0.85rem;
+    }
+    .btn-ghost:hover {
+      background:#f0fdf4;
+    }
   </style>
+
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 </head>
+
 <body>
   <header class="site-header">
     <div class="container header-inner">
       <h1 class="logo">My Enrollments</h1>
       <nav class="nav-links">
-        <a href="../index.html" class="nav-link">All Courses</a>
+        <a href="../index.html" class="nav-link">Home</a>
+        <a href="student-my-enrollments.html" class="nav-link">My Enrollments</a>
       </nav>
     </div>
   </header>
 
   <main class="container">
     <div class="center-box">
-      <p class="small-note">Enter your email below to view and manage your enrollments. You can cancel (withdraw) any enrollment — cancellation will free the seat.</p>
-
-      <div class="form-group">
-        <label for="myEmail">Your Email</label>
-        <input id="myEmail" type="email" placeholder="you@example.com" />
-      </div>
-
-      <div style="display:flex; gap:8px; margin-bottom:12px;">
-        <button id="loadEnrollmentsBtn" class="btn btn-primary">Load My Enrollments</button>
-        <button id="clearBtn" class="btn btn-secondary">Clear</button>
-      </div>
+      <p class="small-note">
+        Below are all the courses you are enrolled in.  
+        You may view details or cancel your enrollment.
+      </p>
 
       <div id="myEnrollmentsList">
-        <!-- rows inserted here -->
+        <!-- auto-loaded here -->
       </div>
     </div>
   </main>

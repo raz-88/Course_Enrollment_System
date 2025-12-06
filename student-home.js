@@ -174,6 +174,7 @@ function renderCourseCards() {
 
     let badge = "badge-seats-ok";
     let badgeText = "Seats available";
+
     if (maxSeats === 0) {
       badgeText = "Open seats";
     } else if (remainingSafe === 0) {
@@ -202,16 +203,10 @@ function renderCourseCards() {
       <div class="course-footer">
         <span class="badge ${badge}">${badgeText}</span>
 
-        <div style="display:flex; gap:6px;">
-          <a href="Student_Enrollment/course-details.html?courseId=${courseId}" class="btn btn-secondary">
-            View Details
-          </a>
-
-          <a href="Student_Enrollment/enroll.html?courseId=${courseId}"
-            class="btn btn-primary ${remainingSafe === 0 && maxSeats > 0 ? "disabled" : ""}">
-            Enroll
-          </a>
-        </div>
+        <a href="Student_Enrollment/course-details.html?courseId=${courseId}"
+           class="btn btn-primary ${remainingSafe === 0 && maxSeats > 0 ? "disabled" : ""}">
+          Enroll
+        </a>
       </div>
     `;
 

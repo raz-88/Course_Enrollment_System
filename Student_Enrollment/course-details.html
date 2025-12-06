@@ -4,9 +4,11 @@
   <meta charset="utf-8" />
   <title>Course Details</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+
   <!-- Reuse student-home styles for visual consistency -->
   <link rel="stylesheet" href="../student-home.css" />
   <link rel="stylesheet" href="course-details.css" />
+
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
@@ -16,8 +18,8 @@
     <div class="container header-inner">
       <h1 class="logo">Course Enrollment Portal</h1>
       <nav class="nav-links">
-        <a href="../index.html" class="nav-link">All Courses</a>
-        <a href="#" class="nav-link disabled-link">My Enrollments</a>
+        <a href="../index.html" class="nav-link">Home</a>
+        <a href="student-my-enrollments.html" class="nav-link disabled-link">My Enrollments</a>
       </nav>
     </div>
   </header>
@@ -34,7 +36,7 @@
 
         <div style="margin-top:10px;">
           <a id="backBtn" class="btn btn-secondary" href="../index.html">← Back to Courses</a>
-          <a id="enrollCourseBtn" class="btn btn-primary" href="#" style="margin-left:8px;">Enroll (open page)</a>
+          <!-- ❌ Removed Enroll (open page) button -->
         </div>
       </div>
     </section>
