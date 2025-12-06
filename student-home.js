@@ -1,6 +1,7 @@
-// student-home.js (Personalized + Public view + Profile dropdown + Logout)
-// -------------------------------
-// Firebase init (same config)
+// student-home.js (Require Login + Profile Dropdown + Courses)
+// ------------------------------------------------------------
+
+// Firebase init
 const firebaseConfig = {
   apiKey: "AIzaSyBjcNmWxI91atAcnv1ALZM4723Cer6OFGo",
   authDomain: "student-enrollment-39c2f.firebaseapp.com",
@@ -11,13 +12,10 @@ const firebaseConfig = {
   appId: "1:810600465736:web:953640e6f15a530ee25f7d"
 };
 
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const auth = firebase.auth();
 
-// -------------------------------
 // DOM elements
 const coursesGrid = document.getElementById("coursesGrid");
 const coursesInfo = document.getElementById("coursesInfo");
@@ -30,7 +28,6 @@ const profileDropdown = document.getElementById("profileDropdown");
 const profileLink = document.getElementById("profileLink");
 const logoutBtn = document.getElementById("logoutBtn");
 
-// helpers
 function emailKey(email) {
   return email.trim().toLowerCase().replace(/\./g, ",");
 }
@@ -44,8 +41,75 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-// -------------------------------
-// Public course loading (runs immediately)
+// ------------------------------------------------------------
+// REQUIRE LOGIN BEFORE LOADING ANYTHING
+// ------------------------------------------------------------
+auth.onAuthStateChanged(async (user) => {
+  if (!user) {
+    // Redirect instantly if not logged in
+    window.location.href = "auth.html";
+    return;
+  }
+
+  // User is logged in → Load personalized UI
+  await setupUserProfile(user);
+  loadStudentCourses();
+});
+
+// ------------------------------------------------------------
+// Setup profile UI for logged-in user
+// ------------------------------------------------------------
+async function setupUserProfile(user) {
+  let displayName = null;
+
+  try {
+    const uid = user.uid;
+    const userNameSnap = await db.ref("users/" + uid + "/name").get();
+
+    if (userNameSnap.exists()) {
+      displayName = userNameSnap.val();
+    } else if (user.email) {
+      const sk = emailKey(user.email);
+      const studSnap = await db.ref("students/" + sk + "/name").get();
+      if (studSnap.exists()) displayName = studSnap.val();
+    }
+  } catch {}
+
+  const short = displayName
+    ? displayName.split(" ")[0]
+    : user.email.split("@")[0];
+
+  profileNameEl.textContent = displayName || short;
+  profileInitialEl.textContent = short[0].toUpperCase();
+
+  profileBtn.onclick = function (evt) {
+    evt.stopPropagation();
+    const open = profileDropdown.classList.contains("show");
+    profileDropdown.classList.toggle("show", !open);
+    profileDropdown.setAttribute("aria-hidden", open ? "true" : "false");
+  };
+
+  document.addEventListener("click", function (ev) {
+    if (!profileWrapper.contains(ev.target)) {
+      profileDropdown.classList.remove("show");
+    }
+  });
+
+  // Profile page
+  profileLink.onclick = function () {
+    window.location.href = "Student_Enrollment/student-my-enrollments.html";
+  };
+
+  // Logout
+  logoutBtn.onclick = async function () {
+    await auth.signOut();
+    window.location.href = "auth.html";
+  };
+}
+
+// ------------------------------------------------------------
+// Load all courses that student can see
+// ------------------------------------------------------------
 let courseCache = {};
 let enrollmentsByCourse = {};
 
@@ -64,35 +128,35 @@ async function loadStudentCourses() {
 
     enrollmentsByCourse = {};
     Object.keys(enrollData).forEach((courseId) => {
-      const courseEnrollments = enrollData[courseId] || {};
-      enrollmentsByCourse[courseId] = Object.keys(courseEnrollments).length;
+      enrollmentsByCourse[courseId] =
+        Object.keys(enrollData[courseId] || {}).length;
     });
 
     renderCourseCards();
   } catch (err) {
-    console.error(err);
-    coursesInfo.textContent = "Error loading courses. Please try again later.";
+    coursesInfo.textContent = "Error loading courses.";
   }
 }
 
+// ------------------------------------------------------------
+// Render course cards
+// ------------------------------------------------------------
 function renderCourseCards() {
   coursesGrid.innerHTML = "";
 
   const ids = Object.keys(courseCache);
   if (!ids.length) {
-    coursesInfo.textContent = "No courses are available right now.";
+    coursesInfo.textContent = "No courses available.";
     return;
   }
 
-  // Filter only active courses
   const activeCourses = ids.filter((id) => {
     const c = courseCache[id];
-    const status = c && c.status ? c.status : "active";
-    return status === "active";
+    return (c.status || "active") === "active";
   });
 
   if (!activeCourses.length) {
-    coursesInfo.textContent = "No active courses available at the moment.";
+    coursesInfo.textContent = "No active courses right now.";
     return;
   }
 
@@ -100,86 +164,51 @@ function renderCourseCards() {
 
   activeCourses.forEach((courseId) => {
     const c = courseCache[courseId];
-    const name = c.name || "Untitled Course";
-    const desc = c.description || "";
+    const filled = typeof c.filledSeats === "number"
+      ? c.filledSeats
+      : (enrollmentsByCourse[courseId] || 0);
+
     const maxSeats = c.maxSeats || 0;
+    const remaining = maxSeats > 0 ? maxSeats - filled : 0;
+    const remainingSafe = Math.max(remaining, 0);
 
-    // Prefer stored filledSeats if present, else use count from enrollments
-    let filledSeats = 0;
-    if (typeof c.filledSeats === "number") {
-      filledSeats = c.filledSeats;
-    } else if (enrollmentsByCourse[courseId]) {
-      filledSeats = enrollmentsByCourse[courseId];
-    }
-
-    const remaining = maxSeats > 0 ? maxSeats - filledSeats : 0;
-    const remainingSafe = remaining < 0 ? 0 : remaining;
-
-    // Determine seat badge
-    let badgeClass = "badge-seats-ok";
+    let badge = "badge-seats-ok";
     let badgeText = "Seats available";
-
     if (maxSeats === 0) {
       badgeText = "Open seats";
-      badgeClass = "badge-seats-ok";
-    } else if (remainingSafe <= 0) {
+    } else if (remainingSafe === 0) {
       badgeText = "Course full";
-      badgeClass = "badge-seats-full";
+      badge = "badge-seats-full";
     } else if (remainingSafe <= Math.max(1, Math.floor(maxSeats * 0.2))) {
       badgeText = "Few seats left";
-      badgeClass = "badge-seats-low";
+      badge = "badge-seats-low";
     }
-
-    const startDate = c.startDate || "";
-    const duration = c.duration || "";
 
     const card = document.createElement("article");
     card.className = "course-card";
 
     card.innerHTML = `
       <div>
-        <div class="course-header">
-          <h3 class="course-title">${escapeHtml(name)}</h3>
-        </div>
-        <p class="course-desc">
-          ${escapeHtml(desc) || "No description provided for this course."}
-        </p>
+        <h3 class="course-title">${escapeHtml(c.name)}</h3>
+        <p class="course-desc">${escapeHtml(c.description)}</p>
+
         <div class="course-meta">
-          ${
-            startDate
-              ? `<span><strong>Start:</strong> ${escapeHtml(startDate)}</span>`
-              : ""
-          }
-          ${
-            duration
-              ? `<span><strong>Duration:</strong> ${escapeHtml(duration)}</span>`
-              : ""
-          }
-          <span class="seat-line">
-            <strong>Seats:</strong>
-            ${
-              maxSeats > 0
-                ? `${filledSeats}/${maxSeats} enrolled`
-                : `${filledSeats} enrolled`
-            }
-          </span>
+          ${c.startDate ? `<span><strong>Start:</strong> ${escapeHtml(c.startDate)}</span>` : ""}
+          ${c.duration ? `<span><strong>Duration:</strong> ${escapeHtml(c.duration)}</span>` : ""}
+          <span><strong>Seats:</strong> ${filled}/${maxSeats || "∞"}</span>
         </div>
       </div>
+
       <div class="course-footer">
-        <span class="badge ${badgeClass}">${badgeText}</span>
+        <span class="badge ${badge}">${badgeText}</span>
+
         <div style="display:flex; gap:6px;">
-          <a href="Student_Enrollment/course-details.html?courseId=${encodeURIComponent(
-            courseId
-          )}" class="btn btn-secondary">
+          <a href="Student_Enrollment/course-details.html?courseId=${courseId}" class="btn btn-secondary">
             View Details
           </a>
-          <a href="Student_Enrollment/enroll.html?courseId=${encodeURIComponent(
-            courseId
-          )}" class="btn btn-primary ${
-            remainingSafe <= 0 && maxSeats > 0 ? "disabled" : ""
-          }" ${
-            remainingSafe <= 0 && maxSeats > 0 ? 'aria-disabled="true"' : ""
-          }>
+
+          <a href="Student_Enrollment/enroll.html?courseId=${courseId}"
+            class="btn btn-primary ${remainingSafe === 0 && maxSeats > 0 ? "disabled" : ""}">
             Enroll
           </a>
         </div>
@@ -189,123 +218,3 @@ function renderCourseCards() {
     coursesGrid.appendChild(card);
   });
 }
-
-// Start public load
-loadStudentCourses();
-
-// -------------------------------
-// Auth-aware personalization (no redirect)
-// - If signed in: show welcome name + dropdown & load courses (refresh to show user-specific UI if needed).
-// - If not signed in: profile button redirects to auth page.
-auth.onAuthStateChanged(async (user) => {
-  if (!profileBtn) return;
-
-  if (!user) {
-    // Signed out: show "Sign in"
-    profileNameEl.textContent = "Sign in";
-    profileInitialEl.textContent = "A";
-    // clicking opens auth page
-    profileBtn.onclick = function () {
-      window.location.href = "auth.html";
-    };
-    // hide dropdown
-    profileDropdown.classList.remove("show");
-    profileDropdown.setAttribute("aria-hidden", "true");
-    return;
-  }
-
-  // Signed in: show name + initial and attach dropdown actions
-  let displayName = null;
-  try {
-    // Try users/{uid}/name
-    const uid = user.uid;
-    const userNameSnap = await db.ref("users/" + uid + "/name").get();
-    if (userNameSnap.exists() && userNameSnap.val()) {
-      displayName = userNameSnap.val();
-    } else {
-      // fallback: students by email
-      const email = user.email || "";
-      if (email) {
-        const sk = emailKey(email);
-        const studSnap = await db.ref("students/" + sk + "/name").get();
-        if (studSnap.exists() && studSnap.val()) displayName = studSnap.val();
-      }
-    }
-  } catch (err) {
-    console.error("Error reading display name:", err);
-  }
-
-  const short = displayName
-    ? displayName.split(" ").slice(0, 1)[0]
-    : (user.email ? user.email.split("@")[0] : "You");
-
-  profileNameEl.textContent = displayName || (user.email ? user.email.split("@")[0] : "User");
-  profileInitialEl.textContent = (short && short[0] ? short[0].toUpperCase() : "U");
-
-  // profile button opens/closes dropdown
-  profileBtn.onclick = function (evt) {
-    evt.stopPropagation();
-    const isShown = profileDropdown.classList.contains("show");
-    if (isShown) {
-      profileDropdown.classList.remove("show");
-      profileDropdown.setAttribute("aria-hidden", "true");
-      profileBtn.setAttribute("aria-expanded", "false");
-    } else {
-      profileDropdown.classList.add("show");
-      profileDropdown.setAttribute("aria-hidden", "false");
-      profileBtn.setAttribute("aria-expanded", "true");
-    }
-  };
-
-  // clicking outside closes dropdown
-  document.addEventListener("click", function (ev) {
-    if (!profileWrapper.contains(ev.target)) {
-      profileDropdown.classList.remove("show");
-      profileDropdown.setAttribute("aria-hidden", "true");
-      profileBtn.setAttribute("aria-expanded", "false");
-    }
-  });
-
-  // Profile link already points to student-my-enrollments.html
-  profileLink.onclick = function () {
-    // close dropdown and navigate
-    profileDropdown.classList.remove("show");
-    profileDropdown.setAttribute("aria-hidden", "true");
-    profileBtn.setAttribute("aria-expanded", "false");
-    window.location.href = "Student_Enrollment/student-my-enrollments.html";
-  };
-
-  // Change Password link opens change-password page (close dropdown first)
-  const changePwdLink = document.getElementById("changePwdLink");
-  if (changePwdLink) {
-    changePwdLink.onclick = function (ev) {
-      ev.preventDefault();
-      profileDropdown.classList.remove("show");
-      profileDropdown.setAttribute("aria-hidden", "true");
-      profileBtn.setAttribute("aria-expanded", "false");
-      // navigate to change password page
-      window.location.href = "Student_Enrollment/change-password.html";
-    };
-  }
-
-  // logout
-  logoutBtn.onclick = async function () {
-    try {
-      await auth.signOut();
-      // after sign out, show signin label
-      profileNameEl.textContent = "Sign in";
-      profileInitialEl.textContent = "A";
-      profileDropdown.classList.remove("show");
-      profileDropdown.setAttribute("aria-hidden", "true");
-      profileBtn.setAttribute("aria-expanded", "false");
-      // optional: redirect to auth page
-      window.location.href = "../auth.html";
-    } catch (err) {
-      console.error("Logout failed:", err);
-      alert("Logout failed. Try again.");
-    }
-  };
-
-  // refresh courses (optional) — some apps might show different content for logged users
-  loadStudentCourses();
-});

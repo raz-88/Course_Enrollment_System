@@ -1,5 +1,4 @@
-// admin-topics.js
-
+// admin-topics.js (updated)
 // -------------------------------
 // Firebase init
 // -------------------------------
@@ -34,8 +33,15 @@ const topicsTotalUsedEl = document.getElementById("topicsTotalUsed");
 const exportTopicsExcelBtn = document.getElementById("exportTopicsExcelBtn");
 const exportTopicsPdfBtn = document.getElementById("exportTopicsPdfBtn");
 
+// New DOM elements for enrollment mode
+const modeIndividualRadio = document.getElementById("modeIndividual");
+const modeGroupRadio = document.getElementById("modeGroup");
+const groupOptionsBlock = document.getElementById("groupOptions");
+const groupMinInput = document.getElementById("groupMinMembers");
+const groupMaxInput = document.getElementById("groupMaxMembers");
+
 let courseCache = {};
-let topicsCache = {}; // topicId -> {title, maxPeople, status, usedCount}
+let topicsCache = {}; // topicId -> {title, maxPeople, status, usedCount, enrollmentMode, groupMin, groupMax}
 let editingTopicId = null;
 
 // -------------------------------
@@ -83,6 +89,7 @@ async function loadTopicsForSelectedCourse() {
   }
 
   try {
+    // Fetch topics and enrollments
     const [topicsSnap, enrollSnap] = await Promise.all([
       db.ref("courses/" + courseId + "/topics").get(),
       db.ref("enrollments/" + courseId).get(),
@@ -91,26 +98,62 @@ async function loadTopicsForSelectedCourse() {
     const rawTopics = topicsSnap.exists() ? topicsSnap.val() : {};
     const enrollments = enrollSnap.exists() ? enrollSnap.val() : {};
 
-    // Calculate usedCount per topic from ENROLLMENTS
-    const usedCounts = {}; // topicId -> count
+    // Calculate used counts:
+    // - usedMembersCounts: per-topic count of enrollment records (members)
+    // - usedGroupIds: per-topic set of groupIds (unique groups)
+    const usedMembersCounts = {}; // topicId -> number of enrollment entries
+    const usedGroupIdSets = {}; // topicId -> Set(groupIds)
+
     Object.values(enrollments).forEach((en) => {
       const tid = en.topicId;
       if (!tid) return;
-      usedCounts[tid] = (usedCounts[tid] || 0) + 1;
+
+      // count member
+      usedMembersCounts[tid] = (usedMembersCounts[tid] || 0) + 1;
+
+      // if enrollment contains groupId, track unique groups
+      if (en.groupId) {
+        usedGroupIdSets[tid] = usedGroupIdSets[tid] || new Set();
+        usedGroupIdSets[tid].add(en.groupId);
+      }
     });
 
+    // Build topicsCache with new fields (enrollmentMode, groupMinMembers, groupMaxMembers)
     topicsCache = {};
     Object.entries(rawTopics).forEach(([tid, t]) => {
       const status = t.status || "active";
       const maxPeople = t.maxPeople || 1;
-      const used = usedCounts[tid] || 0;
+
+      // new fields with defaults
+      const enrollmentMode = t.enrollmentMode || "individual"; // "individual" or "group"
+      const groupMin = t.groupMinMembers || null;
+      const groupMax = t.groupMaxMembers || null;
+
+      // Determine usedCount:
+      // - if group mode: prefer unique groups count (if present), else fall back to member count
+      let used = 0;
+      const membersUsed = usedMembersCounts[tid] || 0;
+      const groupSet = usedGroupIdSets[tid];
+      const groupsUsed = groupSet ? groupSet.size : 0;
+
+      if (enrollmentMode === "group") {
+        used = groupsUsed || membersUsed; // if groups recorded, use unique groups; else fallback
+      } else {
+        used = membersUsed;
+      }
 
       topicsCache[tid] = {
         title: t.title || "Untitled Topic",
         maxPeople,
         status,
         usedCount: used,
-        isTaken: t.isTaken || false, // legacy/unused
+        isTaken: t.isTaken || false,
+        enrollmentMode,
+        groupMinMembers: groupMin,
+        groupMaxMembers: groupMax,
+        // for exports: include raw membersUsed and groupsUsed
+        _debug_membersUsed: membersUsed,
+        _debug_groupsUsed: groupsUsed,
       };
     });
 
@@ -139,17 +182,29 @@ function renderTopicsTable() {
     const remainingSafe = remaining < 0 ? 0 : remaining;
     const serialNo = index + 1;
 
+    // Build a small descriptor for mode / group size
+    let modeLabel = "";
+    if (t.enrollmentMode === "group") {
+      const min = t.groupMinMembers ? `min:${t.groupMinMembers}` : "";
+      const max = t.groupMaxMembers ? `max:${t.groupMaxMembers}` : "";
+      const range = [min, max].filter(Boolean).join(" ");
+      modeLabel = `<div class="muted" style="font-size:12px;">Mode: <strong>Group</strong>${range ? " (" + range + ")" : ""}</div>`;
+    } else {
+      modeLabel = `<div class="muted" style="font-size:12px;">Mode: <strong>Individual</strong></div>`;
+    }
+
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${serialNo}</td>
-      <td>${t.title}</td>
+      <td>
+        ${t.title}
+        ${modeLabel}
+      </td>
       <td>${t.maxPeople}</td>
       <td>${t.usedCount}</td>
       <td>${remainingSafe}</td>
       <td>
-        <span class="status-badge ${
-          t.status === "active" ? "status-active" : "status-suspended"
-        }">
+        <span class="status-badge ${t.status === "active" ? "status-active" : "status-suspended"}">
           ${t.status === "active" ? "Active" : "Suspended"}
         </span>
       </td>
@@ -200,12 +255,31 @@ function updateSummary() {
 // -------------------------------
 // Topic form (add / edit)
 // -------------------------------
+
+// handle course change
 topicCourseSelect.addEventListener("change", () => {
   topicFormMsg.textContent = "";
   topicForm.reset();
   editingTopicId = null;
+  // reset mode UI
+  modeIndividualRadio.checked = true;
+  groupOptionsBlock.style.display = "none";
   loadTopicsForSelectedCourse();
 });
+
+// toggle group options visibility
+function setModeUI(mode) {
+  if (mode === "group") {
+    groupOptionsBlock.style.display = "block";
+    modeGroupRadio.checked = true;
+  } else {
+    groupOptionsBlock.style.display = "none";
+    modeIndividualRadio.checked = true;
+  }
+}
+
+modeIndividualRadio.addEventListener("change", () => setModeUI("individual"));
+modeGroupRadio.addEventListener("change", () => setModeUI("group"));
 
 topicForm.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -216,6 +290,10 @@ topicForm.addEventListener("submit", async (e) => {
   const title = topicTitleInput.value.trim();
   const maxPeopleValue = topicMaxPeopleInput.value;
   const maxPeople = parseInt(maxPeopleValue, 10);
+
+  const enrollmentMode = document.querySelector('input[name="enrollmentMode"]:checked')?.value || "individual";
+  const groupMin = groupMinInput.value ? parseInt(groupMinInput.value, 10) : null;
+  const groupMax = groupMaxInput.value ? parseInt(groupMaxInput.value, 10) : null;
 
   if (!courseId) {
     topicFormMsg.textContent = "Please select a course first.";
@@ -230,6 +308,22 @@ topicForm.addEventListener("submit", async (e) => {
     return;
   }
 
+  // validate group min / max when group mode selected
+  if (enrollmentMode === "group") {
+    if (!groupMin || groupMin <= 0) {
+      topicFormMsg.textContent = "Please enter a valid minimum members per group.";
+      return;
+    }
+    if (!groupMax || groupMax <= 0) {
+      topicFormMsg.textContent = "Please enter a valid maximum members per group.";
+      return;
+    }
+    if (groupMin > groupMax) {
+      topicFormMsg.textContent = "Group min cannot be greater than group max.";
+      return;
+    }
+  }
+
   try {
     if (editingTopicId) {
       // Update existing topic
@@ -240,6 +334,10 @@ topicForm.addEventListener("submit", async (e) => {
           title,
           maxPeople,
           status: current.status || "active",
+          // new fields
+          enrollmentMode,
+          groupMinMembers: enrollmentMode === "group" ? groupMin : null,
+          groupMaxMembers: enrollmentMode === "group" ? groupMax : null,
         });
 
       topicFormMsg.textContent = "Topic updated successfully.";
@@ -252,6 +350,10 @@ topicForm.addEventListener("submit", async (e) => {
         maxPeople,
         status: "active",
         isTaken: false,
+        // new fields
+        enrollmentMode,
+        groupMinMembers: enrollmentMode === "group" ? groupMin : null,
+        groupMaxMembers: enrollmentMode === "group" ? groupMax : null,
       });
 
       topicFormMsg.textContent = "Topic added successfully.";
@@ -260,10 +362,12 @@ topicForm.addEventListener("submit", async (e) => {
 
     topicForm.reset();
     editingTopicId = null;
+    // reset mode UI
+    setModeUI("individual");
     await loadTopicsForSelectedCourse();
   } catch (err) {
     console.error(err);
-    topicFormMsg.textcontent = "Error saving topic. Please try again.";
+    topicFormMsg.textContent = "Error saving topic. Please try again.";
   }
 });
 
@@ -341,6 +445,17 @@ function startEditTopic(tid) {
 
   topicTitleInput.value = t.title || "";
   topicMaxPeopleInput.value = t.maxPeople || 1;
+  // set mode UI and group inputs
+  if (t.enrollmentMode === "group") {
+    setModeUI("group");
+    groupMinInput.value = t.groupMinMembers || "";
+    groupMaxInput.value = t.groupMaxMembers || "";
+  } else {
+    setModeUI("individual");
+    groupMinInput.value = "";
+    groupMaxInput.value = "";
+  }
+
   topicFormMsg.textContent = "Editing topic. Save to update.";
   topicFormMsg.className = "message success";
 }
@@ -370,13 +485,15 @@ function exportTopicsToExcel() {
       "S. No.": index + 1,
       Course: courseName,
       "Topic Name": t.title,
+      Mode: t.enrollmentMode === "group" ? "Group" : "Individual",
+      "Group Min": t.groupMinMembers || "",
+      "Group Max": t.groupMaxMembers || "",
       "Max People": t.maxPeople,
-      "Used (Enrollments)": t.usedCount,
+      "Used (Enrollments / Groups)": t.enrollmentMode === "group" ? `${t.usedCount} (groups)` : t.usedCount,
       Remaining: remaining < 0 ? 0 : remaining,
       Status: t.status === "active" ? "Active" : "Suspended",
     };
   });
-
 
   const worksheet = XLSX.utils.json_to_sheet(dataForSheet);
   const workbook = XLSX.utils.book_new();
@@ -395,12 +512,6 @@ function exportTopicsToPdf() {
     alert("Please select a course first.");
     return;
   }
-
-  /*const ids = Object.keys(topicsCache);
-  if (!ids.length) {
-    alert("No topics to export for this course.");
-    return;
-  }*/
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -421,6 +532,9 @@ function exportTopicsToPdf() {
     return [
       String(index + 1),
       t.title,
+      t.enrollmentMode === "group" ? "Group" : "Individual",
+      t.groupMinMembers || "",
+      t.groupMaxMembers || "",
       String(t.maxPeople),
       String(t.usedCount),
       String(remaining < 0 ? 0 : remaining),
@@ -430,10 +544,9 @@ function exportTopicsToPdf() {
 
   doc.autoTable({
     startY: 40,
-    head: [["S. No.", "Topic Name", "Max People", "Used (Enroll)", "Remaining", "Status"]],
+    head: [["S. No.", "Topic Name", "Mode", "Grp Min", "Grp Max", "Max People", "Used", "Remaining", "Status"]],
     body,
   });
-
 
   const fileName = `Topics_${courseName.replace(/\s+/g, "_")}.pdf`;
   doc.save(fileName);

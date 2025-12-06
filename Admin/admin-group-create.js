@@ -1,4 +1,4 @@
-// admin-group-create.js
+// admin-group-create.js (FINAL VERSION — DB STRUCTURE FIXED)
 
 // -------------------------------
 // Firebase init
@@ -21,79 +21,95 @@ const db = firebase.database();
 // -------------------------------
 const groupCourseSelect = document.getElementById("groupCourseSelect");
 const studentsTableBody = document.getElementById("studentsTableBody");
+
 const groupForm = document.getElementById("groupForm");
 const groupNameInput = document.getElementById("groupName");
 const groupDescriptionInput = document.getElementById("groupDescription");
 const groupFormMsg = document.getElementById("groupFormMsg");
 
+// -------------------------------
+// Data caches
+// -------------------------------
 let courseCache = {};
-let enrollmentCache = [];   // list of enrollments for selected course
-let groupedEnrollmentIds = new Set(); // enrollmentIds already in some group for that course
+let enrollmentCache = [];
+let groupedEnrollmentIds = new Set(); // students already inside ANY group
 
 // -------------------------------
-// Load courses for dropdown
+// Load courses in dropdown
 // -------------------------------
 function loadCourses() {
-  db.ref("courses").on("value", (snapshot) => {
+  db.ref("courses").on("value", snapshot => {
     courseCache = snapshot.val() || {};
     renderCourseOptions();
   });
 }
 
 function renderCourseOptions() {
-  const old = groupCourseSelect.value;
   groupCourseSelect.innerHTML = `<option value="">-- Choose Course --</option>`;
 
-  Object.entries(courseCache).forEach(([id, c]) => {
+  Object.entries(courseCache).forEach(([cid, c]) => {
     const opt = document.createElement("option");
-    opt.value = id;
-    opt.textContent = c.name || id;
+    opt.value = cid;
+    opt.textContent = c.name || cid;
     groupCourseSelect.appendChild(opt);
   });
-
-  if (old && courseCache[old]) {
-    groupCourseSelect.value = old;
-  }
 }
 
 // -------------------------------
-// Load enrollments + groups for selected course
+// When a course is selected → load students + group status
+// -------------------------------
+groupCourseSelect.addEventListener("change", () => {
+  loadCourseData();
+});
+
+// -------------------------------
+// Load enrollments & detect grouped students
 // -------------------------------
 async function loadCourseData() {
   const courseId = groupCourseSelect.value;
   studentsTableBody.innerHTML = "";
   groupFormMsg.textContent = "";
+
   enrollmentCache = [];
   groupedEnrollmentIds = new Set();
 
-  if (!courseId) {
-    return;
-  }
+  if (!courseId) return;
 
-  // Load enrollments
-  const enrollSnap = await db.ref("enrollments/" + courseId).get();
+  // -------------------------------
+  // Load ALL enrollments for this course
+  // -------------------------------
+  const enrollSnap = await db.ref(`enrollments/${courseId}`).get();
   if (enrollSnap.exists()) {
-    enrollSnap.forEach((child) => {
-      const data = child.val();
+    enrollSnap.forEach(child => {
+      const d = child.val();
       enrollmentCache.push({
         enrollmentId: child.key,
-        name: data.name || "",
-        email: data.email || "",
-        topicTitle: data.topicTitle || "-",
-        topicId: data.topicId || "",
-        timestamp: data.timestamp || null,
+        name: d.name,
+        email: d.email,
+        topicId: d.topicId,
+        topicTitle: d.topicTitle,
+        timestamp: d.timestamp,
       });
     });
   }
 
-  // Load groups to know which enrollments are already in some group
-  const groupSnap = await db.ref("groups/" + courseId).get();
-  if (groupSnap.exists()) {
-    groupSnap.forEach((groupChild) => {
-      const groupData = groupChild.val() || {};
-      const members = groupData.members || {};
-      Object.keys(members).forEach((enrollmentId) => {
-        groupedEnrollmentIds.add(enrollmentId);
+  // -------------------------------
+  // Load ALL groups inside ALL topics:
+  // groups/{courseId}/{topicId}/{groupId}/members
+  // -------------------------------
+  const groupRootSnap = await db.ref(`groups/${courseId}`).get();
+
+  if (groupRootSnap.exists()) {
+    groupRootSnap.forEach(topicNode => {
+      const topicId = topicNode.key;
+      const groupsInsideTopic = topicNode.val() || {};
+
+      Object.entries(groupsInsideTopic).forEach(([groupId, groupObj]) => {
+        const members = groupObj.members || {};
+
+        Object.keys(members).forEach(enrollId => {
+          groupedEnrollmentIds.add(enrollId);
+        });
       });
     });
   }
@@ -101,20 +117,23 @@ async function loadCourseData() {
   renderStudentsTable();
 }
 
+// -------------------------------
+// Render Students Table
+// -------------------------------
 function renderStudentsTable() {
   studentsTableBody.innerHTML = "";
 
   if (!enrollmentCache.length) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="7">No enrollments found for this course.</td>`;
-    studentsTableBody.appendChild(tr);
+    studentsTableBody.innerHTML =
+      `<tr><td colspan="7">No enrollments found for this course.</td></tr>`;
     return;
   }
 
+  // Sort by registration time
   enrollmentCache.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
-  enrollmentCache.forEach((e) => {
-    const alreadyGrouped = groupedEnrollmentIds.has(e.enrollmentId);
+  enrollmentCache.forEach(e => {
+    const isGrouped = groupedEnrollmentIds.has(e.enrollmentId);
     const dateStr = e.timestamp ? new Date(e.timestamp).toLocaleString() : "";
 
     const tr = document.createElement("tr");
@@ -123,35 +142,33 @@ function renderStudentsTable() {
         <input type="checkbox"
                class="student-checkbox"
                data-eid="${e.enrollmentId}"
-               ${alreadyGrouped ? "disabled" : ""} />
+               ${isGrouped ? "disabled" : ""}>
       </td>
       <td>${e.name}</td>
       <td>${e.email}</td>
       <td>${e.topicTitle}</td>
       <td>${dateStr}</td>
       <td>
-        <select class="role-select" data-eid="${e.enrollmentId}" ${alreadyGrouped ? "disabled" : ""}>
+        <select class="role-select"
+                data-eid="${e.enrollmentId}"
+                ${isGrouped ? "disabled" : ""}>
           <option value="Member">Member</option>
           <option value="Lead">Lead</option>
         </select>
       </td>
-      <td>${alreadyGrouped ? "Already in a group" : "Available"}</td>
+      <td style="color:${isGrouped ? 'red' : 'green'};">
+         ${isGrouped ? "Already in group" : "Available"}
+      </td>
     `;
+
     studentsTableBody.appendChild(tr);
   });
 }
 
 // -------------------------------
-// Handle course change
+// Create Group
 // -------------------------------
-groupCourseSelect.addEventListener("change", () => {
-  loadCourseData();
-});
-
-// -------------------------------
-// Handle Group Creation
-// -------------------------------
-groupForm.addEventListener("submit", async (e) => {
+groupForm.addEventListener("submit", async e => {
   e.preventDefault();
   groupFormMsg.textContent = "";
   groupFormMsg.className = "message";
@@ -161,20 +178,17 @@ groupForm.addEventListener("submit", async (e) => {
   const groupDescription = groupDescriptionInput.value.trim();
 
   if (!courseId) {
-    groupFormMsg.textContent = "Please select a course.";
-    return;
+    return (groupFormMsg.textContent = "Please select a course.");
   }
   if (!groupName) {
-    groupFormMsg.textContent = "Please enter a group name.";
-    return;
+    return (groupFormMsg.textContent = "Please enter group name.");
   }
 
   // Collect selected students
   const selectedIds = [];
-  const checkboxes = document.querySelectorAll(".student-checkbox");
-  checkboxes.forEach((cb) => {
+  document.querySelectorAll(".student-checkbox").forEach(cb => {
     if (cb.checked && !cb.disabled) {
-      selectedIds.push(cb.getAttribute("data-eid"));
+      selectedIds.push(cb.dataset.eid);
     }
   });
 
@@ -184,50 +198,56 @@ groupForm.addEventListener("submit", async (e) => {
   }
 
   try {
-    const members = {};
-    selectedIds.forEach((eid) => {
-      const e = enrollmentCache.find((x) => x.enrollmentId === eid);
-      if (!e) return;
+    // Create group under DEFAULT topic?  
+    // You said you DO NOT want selecting topic here.
+    // So group will go under a special topic "general"
+    // OR should I auto-use student's topic? (tell me)
+    
+    const topicId = "general";
+    const topicTitle = "General Group";
 
-      const roleSelect = document.querySelector(
-        `.role-select[data-eid="${eid}"]`
-      );
-      const role = roleSelect ? roleSelect.value : "Member";
+    const members = {};
+
+    selectedIds.forEach(eid => {
+      const e = enrollmentCache.find(x => x.enrollmentId === eid);
+      const role = document.querySelector(`.role-select[data-eid="${eid}"]`).value;
 
       members[eid] = {
         name: e.name,
         email: e.email,
         topicId: e.topicId,
         topicTitle: e.topicTitle,
-        role: role,
-        timestamp: e.timestamp || null,
+        role,
+        timestamp: e.timestamp,
       };
     });
 
-    const groupRef = db.ref("groups/" + courseId).push();
+    const groupRef = db.ref(`groups/${courseId}/${topicId}`).push();
+
     await groupRef.set({
       groupName,
       description: groupDescription,
       createdAt: Date.now(),
+      topicId,
+      topicTitle,
       members,
     });
 
-    groupFormMsg.textContent = "Group created successfully.";
+    groupFormMsg.textContent = "Group created successfully!";
     groupFormMsg.classList.add("success");
 
-    // Clear only name/description; keep course selection
     groupNameInput.value = "";
     groupDescriptionInput.value = "";
 
-    // Reload so grouped status updates
     await loadCourseData();
+
   } catch (err) {
     console.error(err);
-    groupFormMsg.textContent = "Error creating group. Please try again.";
+    groupFormMsg.textContent = "Error creating group.";
   }
 });
 
 // -------------------------------
-// Start
+// Init
 // -------------------------------
 loadCourses();

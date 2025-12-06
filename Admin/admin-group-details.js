@@ -1,4 +1,4 @@
-// admin-group-details.js
+// admin-group-details.js (UPDATED for groups/{courseId}/{topicId}/{groupId} structure)
 
 // -------------------------------
 // Firebase init
@@ -13,7 +13,7 @@ const firebaseConfig = {
   appId: "1:810600465736:web:953640e6f15a530ee25f7d"
 };
 
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 // -------------------------------
@@ -37,8 +37,9 @@ const availableMembersMsg = document.getElementById("availableMembersMsg");
 const confirmAddMembersBtn = document.getElementById("confirmAddMembersBtn");
 
 let courseCache = {};
-let groupsCache = []; // list of groups for selected course
+let groupsCache = []; // list of groups for selected course (flat list, each entry includes topicId)
 let currentCourseId = null;
+let currentGroupTopicId = null; // topicId for currently viewed group
 let currentGroupId = null;
 
 // enrollment cache for selected course
@@ -88,6 +89,8 @@ async function loadGroups() {
 
   enrollmentCacheForCourse = [];
   groupedEnrollmentIdsForCourse = new Set();
+  currentGroupId = null;
+  currentGroupTopicId = null;
 
   if (!courseId) {
     groupsMsg.textContent = "Please select a course.";
@@ -96,13 +99,14 @@ async function loadGroups() {
 
   try {
     // Load enrollments + groups in parallel
-    const [enrollSnap, groupSnap] = await Promise.all([
+    const [enrollSnap, groupsRootSnap] = await Promise.all([
       db.ref("enrollments/" + courseId).get(),
-      db.ref("groups/" + courseId).get(),
+      db.ref("groups/" + courseId).get(), // THIS returns topic nodes, each containing groups
     ]);
 
     // Enrollments
     if (enrollSnap.exists()) {
+      enrollmentCacheForCourse = []; // reset
       enrollSnap.forEach((child) => {
         const data = child.val();
         enrollmentCacheForCourse.push({
@@ -116,24 +120,30 @@ async function loadGroups() {
       });
     }
 
-    // Groups
-    if (groupSnap.exists()) {
-      groupSnap.forEach((child) => {
-        const data = child.val();
-        const members = data.members || {};
+    // Groups: traverse topicId layer then group nodes
+    if (groupsRootSnap.exists()) {
+      groupsCache = [];
+      groupsRootSnap.forEach((topicChild) => {
+        const topicId = topicChild.key;
+        const groupsUnderTopic = topicChild.val() || {};
+        Object.entries(groupsUnderTopic).forEach(([groupId, groupData]) => {
+          const members = groupData.members || {};
+          groupsCache.push({
+            groupId,
+            topicId,
+            topicTitle: groupData.topicTitle || "",
+            courseId,
+            groupName: groupData.groupName || "",
+            description: groupData.description || "",
+            createdAt: groupData.createdAt || null,
+            members,
+            // optional: include any group-level meta
+          });
 
-        groupsCache.push({
-          groupId: child.key,
-          courseId,
-          groupName: data.groupName || "",
-          description: data.description || "",
-          createdAt: data.createdAt || null,
-          members,
-        });
-
-        // track which enrollments are already in a group
-        Object.keys(members).forEach((enrollmentId) => {
-          groupedEnrollmentIdsForCourse.add(enrollmentId);
+          // track which enrollments are already in some group
+          Object.keys(members).forEach((enrollmentId) => {
+            groupedEnrollmentIdsForCourse.add(enrollmentId);
+          });
         });
       });
     }
@@ -161,14 +171,15 @@ function renderGroupsTable() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${g.groupName || ""}</td>
+      <td>${g.topicTitle || "-"}</td>
       <td>${g.description || "-"}</td>
       <td>${count}</td>
       <td>${dateStr}</td>
       <td>
-        <button class="btn-secondary btn-view-members" data-gid="${g.groupId}">
+        <button class="btn-secondary btn-view-members" data-gid="${g.groupId}" data-tid="${g.topicId}">
           View Members
         </button>
-        <button class="btn-primary btn-delete-group" data-gid="${g.groupId}" style="margin-left:6px;">
+        <button class="btn-primary btn-delete-group" data-gid="${g.groupId}" data-tid="${g.topicId}" style="margin-left:6px;">
           Delete
         </button>
       </td>
@@ -186,14 +197,16 @@ function attachGroupActionEvents() {
   viewButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
       const groupId = btn.getAttribute("data-gid");
-      showGroupMembers(groupId);
+      const topicId = btn.getAttribute("data-tid");
+      showGroupMembers(topicId, groupId);
     });
   });
 
   deleteButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
       const groupId = btn.getAttribute("data-gid");
-      deleteGroup(groupId);
+      const topicId = btn.getAttribute("data-tid");
+      deleteGroup(topicId, groupId);
     });
   });
 }
@@ -201,15 +214,17 @@ function attachGroupActionEvents() {
 // -------------------------------
 // Show group members
 // -------------------------------
-function showGroupMembers(groupId) {
-  const g = groupsCache.find((x) => x.groupId === groupId);
+function showGroupMembers(topicId, groupId) {
+  // find group in flat cache by both topicId & groupId
+  const g = groupsCache.find((x) => x.groupId === groupId && x.topicId === topicId);
   if (!g) return;
 
   currentGroupId = groupId;
+  currentGroupTopicId = topicId;
 
   const courseName = courseCache[g.courseId]?.name || g.courseId;
   membersTitle.textContent = `Group: ${g.groupName}`;
-  membersSubtitle.textContent = `Course: ${courseName} | Members: ${Object.keys(
+  membersSubtitle.textContent = `Course: ${courseName} | Topic: ${g.topicTitle || '-'} | Members: ${Object.keys(
     g.members || {}
   ).length}`;
 
@@ -218,7 +233,7 @@ function showGroupMembers(groupId) {
   const memberEntries = Object.entries(g.members || {});
   if (!memberEntries.length) {
     groupMembersTableBody.innerHTML =
-      '<tr><td colspan="5">No members in this group.</td></tr>';
+      '<tr><td colspan="6">No members in this group.</td></tr>';
   } else {
     memberEntries.forEach(([enrollmentId, m]) => {
       const dateStr = m.timestamp ? new Date(m.timestamp).toLocaleString() : "";
@@ -254,9 +269,9 @@ function showGroupMembers(groupId) {
 // -------------------------------
 // Delete entire group
 // -------------------------------
-async function deleteGroup(groupId) {
+async function deleteGroup(topicId, groupId) {
   if (!currentCourseId) return;
-  const g = groupsCache.find((x) => x.groupId === groupId);
+  const g = groupsCache.find((x) => x.groupId === groupId && x.topicId === topicId);
   if (!g) return;
 
   const confirmDelete = confirm(
@@ -265,17 +280,18 @@ async function deleteGroup(groupId) {
   if (!confirmDelete) return;
 
   try {
-    await db.ref("groups/" + currentCourseId + "/" + groupId).remove();
+    await db.ref(`groups/${currentCourseId}/${topicId}/${groupId}`).remove();
     alert("Group deleted successfully.");
 
     // Reload groups list
     await loadGroups();
 
     // If we just deleted the group being viewed, hide members section
-    if (currentGroupId === groupId) {
+    if (currentGroupId === groupId && currentGroupTopicId === topicId) {
       groupMembersSection.style.display = "none";
       groupMembersTableBody.innerHTML = "";
       currentGroupId = null;
+      currentGroupTopicId = null;
     }
   } catch (err) {
     console.error(err);
@@ -297,9 +313,9 @@ function attachMemberRemoveEvents() {
 }
 
 async function removeMemberFromGroup(enrollmentId) {
-  if (!currentCourseId || !currentGroupId) return;
+  if (!currentCourseId || !currentGroupId || !currentGroupTopicId) return;
 
-  const g = groupsCache.find((x) => x.groupId === currentGroupId);
+  const g = groupsCache.find((x) => x.groupId === currentGroupId && x.topicId === currentGroupTopicId);
   if (!g) return;
 
   const member = g.members?.[enrollmentId];
@@ -312,21 +328,16 @@ async function removeMemberFromGroup(enrollmentId) {
 
   try {
     await db
-      .ref(
-        "groups/" +
-          currentCourseId +
-          "/" +
-          currentGroupId +
-          "/members/" +
-          enrollmentId
-      )
+      .ref(`groups/${currentCourseId}/${currentGroupTopicId}/${currentGroupId}/members/${enrollmentId}`)
       .remove();
 
     // Update local cache: remove from this group
     delete g.members[enrollmentId];
+    // also remove from groupedEnrollmentIdsForCourse set
+    groupedEnrollmentIdsForCourse.delete(enrollmentId);
 
     // Refresh members table
-    showGroupMembers(currentGroupId);
+    showGroupMembers(currentGroupTopicId, currentGroupId);
 
     alert("Member removed from group.");
   } catch (err) {
@@ -342,7 +353,7 @@ function showAvailableMembers() {
   availableMembersTableBody.innerHTML = "";
   availableMembersMsg.textContent = "";
 
-  if (!currentCourseId || !currentGroupId) {
+  if (!currentCourseId || !currentGroupId || !currentGroupTopicId) {
     availableMembersMsg.textContent =
       "Select a course and open a group first.";
     availableMembersSection.style.display = "block";
@@ -397,9 +408,11 @@ function showAvailableMembers() {
   availableMembersSection.scrollIntoView({ behavior: "smooth" });
 }
 
+// -------------------------------
 // Add selected available members to current group
+// -------------------------------
 async function addSelectedMembersToGroup() {
-  if (!currentCourseId || !currentGroupId) {
+  if (!currentCourseId || !currentGroupId || !currentGroupTopicId) {
     alert("Please select a course and open a group first.");
     return;
   }
@@ -418,9 +431,22 @@ async function addSelectedMembersToGroup() {
   }
 
   try {
-    const g = groupsCache.find((x) => x.groupId === currentGroupId);
+    // find cached group
+    const g = groupsCache.find((x) => x.groupId === currentGroupId && x.topicId === currentGroupTopicId);
     if (!g) {
       alert("Group no longer exists. Please reload.");
+      return;
+    }
+
+    // check group capacity if topic has groupMaxMembers set (we need to read topic config)
+    // Attempt to read topic config to know groupMaxMembers (best-effort)
+    const topicSnap = await db.ref(`courses/${currentCourseId}/topics/${currentGroupTopicId}`).get();
+    const topicData = topicSnap.exists() ? topicSnap.val() : null;
+    const groupMax = topicData?.groupMaxMembers || null;
+
+    const currentCount = Object.keys(g.members || {}).length;
+    if (groupMax && currentCount + selectedIds.length > groupMax) {
+      alert(`Cannot add ${selectedIds.length} members. Group capacity (${groupMax}) will be exceeded.`);
       return;
     }
 
@@ -436,13 +462,9 @@ async function addSelectedMembersToGroup() {
       );
       const role = roleSelect ? roleSelect.value : "Member";
 
+      // write full member object under groups/{courseId}/{topicId}/{groupId}/members/{enrollmentId}
       updates[
-        "groups/" +
-          currentCourseId +
-          "/" +
-          currentGroupId +
-          "/members/" +
-          eid
+        `groups/${currentCourseId}/${currentGroupTopicId}/${currentGroupId}/members/${eid}`
       ] = {
         name: e.name,
         email: e.email,
@@ -465,12 +487,13 @@ async function addSelectedMembersToGroup() {
       };
     });
 
+    // perform single multi-path update
     await db.ref().update(updates);
 
     alert("Selected students added to the group.");
 
     // Refresh current group members & available list
-    showGroupMembers(currentGroupId);
+    showGroupMembers(currentGroupTopicId, currentGroupId);
     showAvailableMembers();
   } catch (err) {
     console.error(err);
@@ -510,6 +533,7 @@ function exportGroupsToPdf() {
     const dateStr = g.createdAt ? new Date(g.createdAt).toLocaleString() : "";
     return [
       g.groupName || "",
+      g.topicTitle || "",
       g.description || "",
       String(memberCount),
       dateStr,
@@ -518,7 +542,7 @@ function exportGroupsToPdf() {
 
   doc.autoTable({
     startY: 40,
-    head: [["Group Name", "Description", "Members", "Created At"]],
+    head: [["Group Name", "Topic", "Description", "Members", "Created At"]],
     body: summaryBody,
   });
 
@@ -539,7 +563,7 @@ function exportGroupsToPdf() {
 
     doc.setFontSize(12);
     doc.text(
-      `Group: ${g.groupName}  (Members: ${memberEntries.length})`,
+      `Group: ${g.groupName}  (Topic: ${g.topicTitle || '-'})  (Members: ${memberEntries.length})`,
       14,
       finalY
     );

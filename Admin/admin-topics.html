@@ -61,6 +61,7 @@
       </div>
 
       <!-- Add / Edit Topic Form -->
+      <!-- Add / Edit Topic Form -->
       <form id="topicForm" class="topic-form" style="margin-bottom:10px;">
         <div class="form-group">
           <label for="topicTitle">Topic Name</label>
@@ -70,6 +71,7 @@
             placeholder="e.g. AI in Healthcare, Cloud Computing Basics, etc."
           />
         </div>
+
         <div class="form-group">
           <label for="topicMaxPeople">Max People (capacity)</label>
           <input
@@ -78,12 +80,44 @@
             min="1"
             placeholder="e.g. 3, 5, 10"
           />
+          <small class="muted">For group topics this is number of <em>groups</em> allowed; for individual topics it's total seats.</small>
         </div>
+
+        <!-- Enrollment Mode -->
+        <div class="form-group">
+          <label>Enrollment Mode</label>
+          <div style="display:flex; gap:12px; align-items:center;">
+            <label style="display:flex; gap:6px; align-items:center;">
+              <input type="radio" name="enrollmentMode" value="individual" id="modeIndividual" checked />
+              Individual
+            </label>
+            <label style="display:flex; gap:6px; align-items:center;">
+              <input type="radio" name="enrollmentMode" value="group" id="modeGroup" />
+              Group
+            </label>
+          </div>
+          <small class="muted">If <strong>Group</strong> is selected, users on the portal will only see the Group enrollment option for this topic.</small>
+        </div>
+
+        <!-- Group Min / Max (visible only when Group is selected) -->
+        <div id="groupOptions" style="display:none; margin-top:6px;">
+          <div class="form-group" style="max-width:320px;">
+            <label for="groupMinMembers">Min members per group</label>
+            <input type="number" id="groupMinMembers" min="1" placeholder="e.g. 2" />
+          </div>
+          <div class="form-group" style="max-width:320px;">
+            <label for="groupMaxMembers">Max members per group</label>
+            <input type="number" id="groupMaxMembers" min="1" placeholder="e.g. 5" />
+          </div>
+          <small class="muted">Group min / max define how many members can join a group. Admins set these values.</small>
+        </div>
+
         <button type="submit" class="btn-secondary" id="addTopicBtn">
           Save Topic
         </button>
       </form>
       <p id="topicFormMsg" class="message"></p>
+
 
       <!-- Summary -->
       <div class="form-group" style="margin-top:12px; margin-bottom:4px;">

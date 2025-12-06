@@ -137,30 +137,41 @@ async function loadCourseEnrollments() {
     }
 
     // Groups
+    // Groups (NEW DB STRUCTURE)
+    // groups/{courseId}/{topicId}/{groupId}/members
     if (groupsSnap.exists()) {
-      groupsSnap.forEach(function (child) {
-        const groupId = child.key;
-        const gdata = child.val() || {};
-        const groupName = gdata.groupName || "Unnamed Group";
-        const members = gdata.members || {};
+      groupsSnap.forEach(topicNode => {
+        const topicId = topicNode.key;  
+        const groupsInsideTopic = topicNode.val() || {};
 
-        groupsListForCourse.push({
-          groupId: groupId,
-          groupName: groupName,
-          members: members
-        });
+        Object.entries(groupsInsideTopic).forEach(([groupId, groupObj]) => {
+          const groupName = groupObj.groupName || "Unnamed Group";
+          const members = groupObj.members || {};
 
-        Object.keys(members).forEach(function (enrollmentId) {
-          if (!groupsByEnrollment[enrollmentId]) {
-            groupsByEnrollment[enrollmentId] = [];
-          }
-          groupsByEnrollment[enrollmentId].push({
+          // Push into groups list (for edit dropdown)
+          groupsListForCourse.push({
             groupId: groupId,
-            groupName: groupName
+            topicId: topicId,
+            groupName: groupName,
+            members: members
+          });
+
+          // Map enrollmentId => list of groups
+          Object.entries(members).forEach(([enrollmentId, m]) => {
+            if (!groupsByEnrollment[enrollmentId]) {
+              groupsByEnrollment[enrollmentId] = [];
+            }
+            groupsByEnrollment[enrollmentId].push({
+              groupId: groupId,
+              topicId: topicId,
+              groupName: groupName,
+              role: m.role || "Member"
+            });
           });
         });
       });
     }
+
 
     renderEditTopicOptions();
     renderEnrollmentTable();

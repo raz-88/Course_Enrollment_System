@@ -9,13 +9,13 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 
-  <!-- PDF Export (jsPDF + AutoTable) -->
+  <!-- PDF Export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  
 </head>
+
 <body>
   <!-- Header -->
   <header class="site-header admin-header">
@@ -29,28 +29,31 @@
 
         <!-- Admin profile wrapper -->
         <div id="adminProfileWrapper" class="profile-wrapper">
-          <button id="adminProfileBtn" class="profile-btn" aria-haspopup="true" aria-expanded="false">
+          <button id="adminProfileBtn" class="profile-btn">
             <span id="adminProfileInitial" class="profile-initial">A</span>
             <span id="adminProfileName" class="profile-name">Admin</span>
           </button>
 
-          <div id="adminProfileDropdown" class="profile-dropdown" role="menu" aria-hidden="true">
+          <div id="adminProfileDropdown" class="profile-dropdown" role="menu">
             <a id="adminProfileLink" href="admin-profile.html" class="profile-item">My Profile</a>
             <a id="adminChangePwdLink" href="change-password.html" class="profile-item">Change Password</a>
             <button id="adminLogoutBtn" class="profile-item profile-logout">Logout</button>
           </div>
+
+          
         </div>
       </nav>
     </div>
   </header>
 
   <main class="container">
+
     <!-- Group list -->
     <section class="card">
       <h2>Groups by Course</h2>
       <p class="note">
-        Select a course to see the groups, view their members, remove members, delete a group,
-        or download everything in PDF.
+        Select a course to see the groups, their topic, members, remove members,
+        delete a group, or download everything in PDF.
       </p>
 
       <div class="form-group">
@@ -61,28 +64,27 @@
       </div>
 
       <div class="form-group">
-        <button id="exportGroupPdfBtn" class="btn-primary">
-          Download Groups PDF
-        </button>
+        <button id="exportGroupPdfBtn" class="btn-primary">Download Groups PDF</button>
       </div>
 
       <table class="data-table">
         <thead>
           <tr>
             <th>Group Name</th>
+            <th>Topic</th>       <!-- ✅ NEW COLUMN -->
             <th>Description</th>
             <th>Members</th>
             <th>Created At</th>
             <th>Action</th>
           </tr>
         </thead>
-        <tbody id="groupsTableBody">
-          <!-- Filled by admin-group-details.js -->
-        </tbody>
+        <tbody id="groupsTableBody"></tbody>
       </table>
 
       <p id="groupsMsg" class="message"></p>
     </section>
+
+
 
     <!-- Group members -->
     <section class="card" id="groupMembersSection" style="display:none;">
@@ -90,9 +92,7 @@
       <p class="note" id="membersSubtitle"></p>
 
       <div class="form-group">
-        <button id="addMemberBtn" class="btn-secondary">
-          Add Member
-        </button>
+        <button id="addMemberBtn" class="btn-secondary">Add Member</button>
       </div>
 
       <table class="data-table">
@@ -101,20 +101,21 @@
             <th>Student Name</th>
             <th>Email</th>
             <th>Topic</th>
+            <th>Role</th>        <!-- ✅ NEW COLUMN -->
             <th>Enrolled At</th>
             <th>Action</th>
           </tr>
         </thead>
-        <tbody id="groupMembersTableBody">
-          <!-- Filled by admin-group-details.js -->
-        </tbody>
+        <tbody id="groupMembersTableBody"></tbody>
       </table>
     </section>
 
-    <!-- Available members (not in any group) -->
+
+
+    <!-- Available members (not assigned to any group) -->
     <section class="card" id="availableMembersSection" style="display:none;">
       <h2>Available Students (Not in any Group)</h2>
-      <p class="note" id="availableMembersSubtitle">
+      <p class="note">
         These students are enrolled in this course but not assigned to any group.
       </p>
 
@@ -126,11 +127,10 @@
             <th>Email</th>
             <th>Topic</th>
             <th>Enrolled At</th>
+            <th>Role</th>         <!-- ✅ NEW COLUMN -->
           </tr>
         </thead>
-        <tbody id="availableMembersTableBody">
-          <!-- Filled by admin-group-details.js -->
-        </tbody>
+        <tbody id="availableMembersTableBody"></tbody>
       </table>
 
       <p id="availableMembersMsg" class="message"></p>
@@ -139,6 +139,7 @@
         Add Selected to Group
       </button>
     </section>
+
   </main>
 
   <footer class="site-footer">
