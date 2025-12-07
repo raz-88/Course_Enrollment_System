@@ -3,6 +3,7 @@
    - Features: View, Edit, Add (register), Suspend/Reactivate, Reset password,
      Delete (move to /deletedUsers + suspend), Search, Export CSV/PDF (current view)
    - Shows Sn., Created On columns; treats addRole "staff" => saved as "admin"
+   - Now also displays Roll No (users/{uid}.rollNo) in table, view modal, and exports
 */
 
 /* -------------------------
@@ -41,6 +42,7 @@ const viewBox = document.getElementById('view-box');
 const editForm = document.getElementById('edit-form');
 const editUid = document.getElementById('edit-uid');
 const editName = document.getElementById('edit-name');
+const editRoll = document.getElementById('edit-roll');  /* New Added*/
 const editEmail = document.getElementById('edit-email');
 const editRole = document.getElementById('edit-role');
 const editStatus = document.getElementById('edit-status');
@@ -101,6 +103,7 @@ function fetchUsers() {
         email: u.email || '',
         role: u.role || 'student',
         suspended: !!u.suspended,
+        rollNo: u.rollNo || u.roll || '', // support both rollNo and roll keys
         createdAtRaw: u.createdAt || u.registeredOn || '',
         createdAt: formatCreatedAt(u.createdAt || u.registeredOn || '')
       });
@@ -122,6 +125,7 @@ function renderTable(users) {
       <td style="width:48px">${index + 1}</td>
       <td style="word-break:break-all">${escapeHtml(u.uid)}</td>
       <td>${escapeHtml(u.name || '-')}</td>
+      <td>${escapeHtml(u.rollNo || '-')}</td>
       <td>${escapeHtml(u.email || '-')}</td>
       <td>${escapeHtml(u.role)}</td>
       <td>${u.suspended ? '<span class="status-suspended">Suspended</span>' : '<span class="status-active">Active</span>'}</td>
@@ -145,7 +149,7 @@ window.viewUser = function(uid) {
   db.ref('users/' + uid).once('value').then(snap => {
     const u = snap.val() || {};
     let html = '';
-    const order = ['name','email','role','suspended','createdAt','registeredOn','uid'];
+    const order = ['name','rollNo','email','role','suspended','createdAt','registeredOn','uid'];
     order.forEach(k => { if (u[k] !== undefined) html += `<p><strong>${escapeHtml(k)}:</strong> ${escapeHtml(String(u[k]))}</p>`; });
     Object.keys(u).forEach(k => { if (!order.includes(k)) html += `<p><strong>${escapeHtml(k)}:</strong> ${escapeHtml(String(u[k]))}</p>`; });
     viewBox.innerHTML = html || '<p>-</p>';
@@ -158,11 +162,15 @@ window.startEdit = function(uid) {
     const u = snap.val() || {};
     editUid.value = uid;
     editName.value = u.name || '';
+    editRoll.value = u.rollNo || '';        // ⭐ NEW
     editEmail.value = u.email || '';
     editRole.value = u.role || 'student';
     editStatus.value = u.suspended ? 'suspended' : 'active';
     openModal('edit-modal');
-  }).catch(err => { console.error(err); showMessage('Error preparing edit.'); });
+  }).catch(err => {
+    console.error(err);
+    showMessage('Error preparing edit.');
+  });
 };
 
 if (editForm) {
@@ -171,6 +179,7 @@ if (editForm) {
     const uid = editUid.value;
     const update = {
       name: editName.value.trim(),
+      rollNo: editRoll.value.trim(),     // ⭐ NEW
       email: editEmail.value.trim(),
       role: editRole.value,
       suspended: editStatus.value === 'suspended'
@@ -263,7 +272,8 @@ if (searchInput) {
     const filtered = allUsers.filter(u =>
       (u.name && u.name.toLowerCase().includes(q)) ||
       (u.email && u.email.toLowerCase().includes(q)) ||
-      (u.uid && u.uid.toLowerCase().includes(q))
+      (u.uid && u.uid.toLowerCase().includes(q)) ||
+      (u.rollNo && u.rollNo.toLowerCase().includes(q))
     );
     renderTable(filtered);
   });
@@ -287,13 +297,14 @@ document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e =
    ------------------------- */
 function exportToCSV(filename = 'users_export.csv') {
   const rows = [
-    ['Sn.', 'UID', 'Name', 'Email', 'Role', 'Status', 'Created On']
+    ['Sn.', 'UID', 'Name', 'Roll No', 'Email', 'Role', 'Status', 'Created On']
   ];
   displayedUsers.forEach((u, i) => {
     rows.push([
       i + 1,
       u.uid || '',
       u.name || '',
+      u.rollNo || '',
       u.email || '',
       u.role || '',
       u.suspended ? 'Suspended' : 'Active',
@@ -316,11 +327,12 @@ function exportToCSV(filename = 'users_export.csv') {
 if (btnExportCSV) btnExportCSV.addEventListener('click', () => exportToCSV('users_export.csv'));
 
 function exportToPDF(filename = 'users_export.pdf') {
-  const columns = ['Sn.', 'UID', 'Name', 'Email', 'Role', 'Status', 'Created On'];
+  const columns = ['Sn.', 'UID', 'Name', 'Roll No', 'Email', 'Role', 'Status', 'Created On'];
   const rows = displayedUsers.map((u, i) => [
     i + 1,
     u.uid || '',
     u.name || '',
+    u.rollNo || '',
     u.email || '',
     u.role || '',
     u.suspended ? 'Suspended' : 'Active',
