@@ -1,0 +1,81 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f5f6fa;
+  margin: 0;
+  padding: 30px;
+}
+
+.container {
+  max-width: 800px;
+  margin: auto;
+  background: #fff;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px #0000001a;
+}
+
+h2 {
+  margin-top: 0;
+  color: #1b5e20;
+}
+
+.lookup-box {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.lookup-box input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.lookup-box button {
+  padding: 10px 16px;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.lookup-box button:hover {
+  background: #1b5e20;
+}
+
+.msg {
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 6px;
+  display: none;
+}
+
+.msg.error {
+  background: #ffcdd2;
+  color: #b71c1c;
+}
+
+.msg.success {
+  background: #c8e6c9;
+  color: #1b5e20;
+}
+
+.result-card {
+  background: #fafafa;
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.result-card .row-title {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.muted {
+  color: #666;
+  font-size: 13px;
+}
