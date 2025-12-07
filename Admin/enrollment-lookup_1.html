@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Email Lookup - Course Enrollment Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Use existing Admin CSS -->
+  <link rel="stylesheet" href="admin.css" />
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+</head>
+
+<body>
+
+  <!-- ================= HEADER ================= -->
+  <header class="site-header admin-header">
+    <div class="container header-inner">
+      <h1 class="logo">Admin Panel</h1>
+
+      <nav class="nav-links">
+        <a href="admin.html" class="nav-link">Dashboard</a>
+        <a href="admin-users.html" class="nav-link">User Management</a>
+        <a href="admin-course-list.html" class="nav-link">Courses</a>
+        <a href="admin-enrollments.html" class="nav-link">Enrollments</a>
+        
+        <a href="enrollment-lookup_1.html" class="nav-link">Email Lookup</a>
+
+        <!-- Profile Dropdown -->
+        <div id="adminProfileWrapper" class="profile-wrapper">
+          <button id="adminProfileBtn" class="profile-btn">
+            <span id="adminProfileInitial" class="profile-initial">A</span>
+            <span id="adminProfileName" class="profile-name">Admin</span>
+          </button>
+
+          <div id="adminProfileDropdown" class="profile-dropdown" aria-hidden="true">
+            <a href="admin-profile.html" class="profile-item">My Profile</a>
+            <a href="change-password.html" class="profile-item">Change Password</a>
+            <button id="adminLogoutBtn" class="profile-item profile-logout">Logout</button>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="container">
+      <h2>Email Lookup Tool 🔍</h2>
+      <p>Search any student's enrollment & group details instantly.</p>
+    </div>
+  </section>
+
+  <!-- ================= PROFILE MODAL ================= -->
+  <div id="profileModal" class="modal">
+    <div class="modal-panel">
+      <h3>Student Profile</h3>
+      <div id="profileContent"></div>
+
+      <button id="closeProfileModal" class="btn-primary" style="margin-top:15px;">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= GROUP MEMBERS MODAL ================= -->
+  <div id="groupModal" class="modal">
+    <div class="modal-panel">
+      <h3 id="groupModalTitle">Group Members</h3>
+      <div id="groupMembersList"></div>
+
+      <button id="closeGroupModal" class="btn-primary" style="margin-top:15px;">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="container">
+
+    <!-- SEARCH BOX -->
+    <section class="card">
+      <h2>Lookup Enrollment by Email</h2>
+      <p class="note">Enter email to fetch all linked course enrollments.</p>
+
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="emailInput" placeholder="Enter student email…" />
+      </div>
+
+      <button id="searchBtn" class="btn-primary">Search</button>
+
+      <p id="lookupMsg" class="message"></p>
+    </section>
+
+    <!-- RESULTS AREA -->
+    <section id="resultsContainer"></section>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="site-footer">
+    <div class="container">
+      <p>© 2025 Course Enrollment Admin</p>
+    </div>
+  </footer>
+
+  <!-- JS -->
+  <script src="enrollment-lookup-extended.js"></script>
+
+</body>
+</html>

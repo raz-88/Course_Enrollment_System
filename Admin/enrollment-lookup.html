@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Enrollment Lookup - Admin</title>
+  <link rel="stylesheet" href="enrollment-lookup.css">
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+</head>
+
+<body>
+  <div class="container">
+
+    <h2>Enrollment Lookup (Admin Only)</h2>
+    <p>Enter any student's email to view their course enrollment details.</p>
+
+    <div class="lookup-box">
+      <input type="email" id="lookupEmail" placeholder="Enter student email..." />
+      <button id="lookupBtn">Search</button>
+    </div>
+
+    <div id="lookupMsg" class="msg"></div>
+
+    <div id="resultsContainer"></div>
+
+  </div>
+
+  <script src="enrollment-lookup.js"></script>
+</body>
+</html>
