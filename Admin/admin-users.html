@@ -66,14 +66,15 @@
         <table class="data-table" id="users-table">
             <thead>
                 <tr>
-                <th>Sn.</th>
-                <th>UID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Created On</th>
-                <th style="width:220px;">Actions</th>
+                  <th>Sn.</th>
+                  <th>UID</th>
+                  <th>Name</th>
+                  <th>Roll No</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Created On</th>
+                  <th style="width:220px;">Actions</th>
                 </tr>
             </thead>
             <tbody id="users-tbody"></tbody>
@@ -103,6 +104,9 @@
 
         <label>Name</label>
         <input id="edit-name" type="text" />
+
+        <label>Roll No</label>
+        <input id="edit-roll" type="text" />
 
         <label>Email</label>
         <input id="edit-email" type="email" />
@@ -135,6 +139,8 @@
       <form id="add-form">
         <label>Name</label>
         <input id="add-name" type="text" required />
+        <label>Roll No</label>
+        <input id="add-roll" type="text" />
         <label>Email</label>
         <input id="add-email" type="email" required />
         <label>Password</label>
@@ -154,6 +160,13 @@
   </div>
 
   <div id="message-box" class="message-box"></div>
+
+  <script>
+    // small glue: populate edit-roll from DB when opening edit modal
+    // (admin-users.js already sets editName/editEmail/editRole/editStatus — we'll also set edit-roll there)
+    // To avoid duplicating logic, ensure admin-users.js reads/writes edit-roll.
+    // If not present in admin-users.js yet, you can use the snippet below or I can update the JS for you.
+  </script>
 
   <script src="admin-users.js"></script>
 

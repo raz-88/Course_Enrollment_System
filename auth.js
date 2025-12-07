@@ -28,6 +28,7 @@ const loginMsg = document.getElementById("loginMsg");
 
 const registerForm = document.getElementById("registerForm");
 const regName = document.getElementById("regName");
+const regRoll = document.getElementById("regRoll"); /* New Added */
 const regEmail = document.getElementById("regEmail");
 const regPassword = document.getElementById("regPassword");
 const regConfirm = document.getElementById("regConfirm");
@@ -72,15 +73,17 @@ registerForm.addEventListener("submit", async function (e) {
   regMsg.className = "form-message";
 
   const name = regName.value.trim();
+  const roll = regRoll.value.trim();       // ⭐ NEW
   const email = regEmail.value.trim();
   const pw = regPassword.value;
   const confirm = regConfirm.value;
 
-  if (!name || !email || !pw || !confirm) {
-    regMsg.textContent = "Please fill all fields.";
+  if (!name || !roll || !email || !pw || !confirm) {
+    regMsg.textContent = "Please fill all fields including Roll Number.";
     regMsg.classList.add("error");
     return;
   }
+
   if (pw.length < 6) {
     regMsg.textContent = "Password must be at least 6 characters.";
     regMsg.classList.add("error");
@@ -103,6 +106,7 @@ registerForm.addEventListener("submit", async function (e) {
     const userRec = {
       uid: uid,
       name: name,
+      rollNo: roll,                           // ⭐ NEW
       email: email,
       role: "student",
       createdAt: Date.now(),
@@ -115,6 +119,7 @@ registerForm.addEventListener("submit", async function (e) {
     await db.ref("students/" + sk).set({
       uid: uid,
       name: name,
+      rollNo: roll,                         // ⭐ NEW
       email: email,
       createdAt: Date.now()
     });
