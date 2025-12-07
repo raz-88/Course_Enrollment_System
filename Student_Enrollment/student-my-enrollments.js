@@ -80,19 +80,22 @@ async function loadMyEnrollments(email) {
     results.forEach(item => {
       const courseName = courses[item.courseId]?.name || "Unknown Course";
       const topicTitle = item.topicTitle || "Unknown Topic";
-      const dateStr = item.timestamp
-        ? new Date(item.timestamp).toLocaleString()
-        : "";
+      const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleString() : "";
 
-      // Find group(s)
+      // Find group (NEW STRUCTURE)
       let groupName = "-";
       if (groups[item.courseId]) {
-        Object.keys(groups[item.courseId]).forEach(gid => {
-          if (groups[item.courseId][gid].members &&
-              groups[item.courseId][gid].members[item.enId]) {
-            const gName = groups[item.courseId][gid].groupName || "Group";
-            groupName = gName;
-          }
+        const topicGroups = groups[item.courseId];
+
+        Object.keys(topicGroups).forEach(topicId => {
+          const groupsUnderTopic = topicGroups[topicId];
+
+          Object.keys(groupsUnderTopic).forEach(groupId => {
+            const gData = groupsUnderTopic[groupId];
+            if (gData.members && gData.members[item.enId]) {
+              groupName = gData.groupName || "Group";
+            }
+          });
         });
       }
 
@@ -108,9 +111,8 @@ async function loadMyEnrollments(email) {
         </div>
 
         <div style="display:flex; flex-direction:column; gap:6px;">
-          <a class="btn btn-secondary"
-             href="course-details.html?courseId=${item.courseId}">
-             View Details
+          <a class="btn btn-secondary" href="course-details.html?courseId=${item.courseId}">
+            View Details
           </a>
 
           <button class="btn-ghost" onclick="cancelEnroll('${item.courseId}', '${item.enId}')">
@@ -121,6 +123,7 @@ async function loadMyEnrollments(email) {
 
       myListEl.appendChild(row);
     });
+
 
   } catch (err) {
     console.error(err);
