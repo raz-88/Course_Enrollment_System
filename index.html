@@ -66,6 +66,7 @@
     </section>
   </main>
 
+  <!--footer-->
   <footer class="site-footer">
     <div class="container">
       <p>© 2025 Course Enrollment Portal</p>
@@ -73,5 +74,49 @@
   </footer>
 
   <script src="student-home.js"></script>
+
+  <!-- 1) Zoho Desk ASAP widget script -->
+  <script type="text/javascript" id="zohodeskasap">
+    var d = document;
+    s = d.createElement("script"),
+    s.type = "text/javascript",
+    s.id = "zohodeskasapscript",
+    s.defer = !0,
+    /* If you are NOT using Content-Security-Policy, you can remove this nonce line */
+    s.nonce = "{place_your_nonce_value_here}",
+    s.src = "https://desk.zoho.in/portal/api/web/asapApp/236145000000352001?orgId=60059780889",
+    t = d.getElementsByTagName("script")[0],
+    t.parentNode.insertBefore(s, t),
+
+    // Helper to run code when ASAP is ready
+    window.ZohoDeskAsapReady = function(callback){
+      var pending = window.ZohoDeskAsap__asyncalls = window.ZohoDeskAsap__asyncalls || [];
+      if (window.ZohoDeskAsapReadyStatus) {
+        if (callback) pending.push(callback);
+        pending.forEach(function(cb){ cb && cb(); });
+        window.ZohoDeskAsap__asyncalls = null;
+      } else {
+        callback && pending.push(callback);
+      }
+    };
+  </script>
+
+  <!-- 2) Connect Zoho Desk with Firebase logged-in user -->
+  <script>
+    // This assumes Firebase is initialized in student-home.js or earlier
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (!user) return; // not logged in → Zoho widget will still work, but tickets won't be tied to a specific user
+
+      // When Zoho ASAP is ready, tell it who the user is
+      ZohoDeskAsapReady(function() {
+        if (typeof ZDPortalAsap === "function") {
+          ZDPortalAsap("setUser", {
+            email: user.email,
+            name: user.displayName || (user.email ? user.email.split("@")[0] : "Student")
+          });
+        }
+      });
+    });
+  </script>
 </body>
 </html>
