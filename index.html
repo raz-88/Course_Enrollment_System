@@ -3,120 +3,344 @@
 <head>
   <meta charset="UTF-8" />
   <title>Student Home – Learning Engagement Portal</title>
-  <meta name="viewport" co-----------------------------------------------------------------------------------------------------------------------------------------ntent="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- EXISTING CSS -->
   <link rel="stylesheet" href="student-home.css" />
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-
 </head>
+
 <body>
-  <header class="site-header">
-    <div class="container header-inner">
-      <h1 class="logo">Learning Engagement Portal - EECE3591 (Renewable Energy System) </h1>
 
-      <nav class="nav-links">
-        <a href="index.html" class="nav-link">Home</a>
-        <a href="Student_Enrollment/student-my-enrollments.html" class="nav-link">My Enrollments</a>
+<!-- ================= HEADER ================= -->
+<header class="site-header">
+  <div class="container header-inner">
+    <h1 class="logo">
+      Learning Engagement Portal - EECE3591 (Renewable Energy System)
+    </h1>
 
-        <!-- Profile wrapper: shows "Sign in" when not logged in,
-            or welcome + avatar when logged in. -->
-        <div id="profileWrapper" class="profile-wrapper">
-          <button id="profileBtn" class="profile-btn" aria-haspopup="true" aria-expanded="false">
-            <span id="profileInitial" class="profile-initial">A</span>
-            <span id="profileName" class="profile-name">Sign in</span>
+    <nav class="nav-links">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="Student_Enrollment/student-my-enrollments.html" class="nav-link">
+        My Enrollments
+      </a>
+
+      <div id="profileWrapper" class="profile-wrapper">
+        <button id="profileBtn" class="profile-btn">
+          <span id="profileInitial" class="profile-initial">A</span>
+          <span id="profileName" class="profile-name">Sign in</span>
+        </button>
+
+        <div id="profileDropdown" class="profile-dropdown">
+          <a id="profileLink"
+             href="Student_Enrollment/student-my-enrollments.html"
+             class="profile-item">
+            My Enrollments
+          </a>
+
+          <a href="Student_Enrollment/change-password.html"
+             class="profile-item">
+            Change Password
+          </a>
+
+          <button id="logoutBtn"
+                  class="profile-item profile-logout">
+            Logout
           </button>
-
-          <div id="profileDropdown" class="profile-dropdown" role="menu" aria-hidden="true">
-            <a id="profileLink" href="Student_Enrollment/student-my-enrollments.html" class="profile-item">My Enrollments</a>
-            <a id="changePwdLink" href="Student_Enrollment/change-password.html" class="profile-item">Change Password</a>
-            <button id="logoutBtn" class="profile-item profile-logout">Logout</button>
-          </div>
         </div>
-      </nav>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- ================= MAIN ================= -->
+<main class="container">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-text">
+      <h2>Welcome 👋</h2>
+      <p>
+        View your enrolled courses or explore available courses below.
+      </p>
     </div>
-  </header>
+  </section>
 
-
-
-  <main class="container">
-    <section class="hero">
-      <div class="hero-text">
-        <h2>Welcome!</h2>
-        <p>
-          Choose from the available courses below and enroll in your preferred topic.
-          Seats are limited and topics may fill up, so enroll early.
-        </p>
-      </div>
-    </section>
-
-    <section class="courses-section">
-      <div class="courses-header">
-        <h2>Available Courses</h2>
-        <p id="coursesInfo" class="note">
-          Loading courses...
-        </p>
-      </div>
-
-      <div id="coursesGrid" class="courses-grid">
-        <!-- Cards rendered by student-home.js -->
-      </div>
-    </section>
-  </main>
-
-  <!--footer-->
-  <footer class="site-footer">
-    <div class="container">
-      <p>© 2025 Course Enrollment Portal</p>
+  <!-- ================= ENROLLED COURSES ================= -->
+  <section class="courses-section">
+    <div class="courses-header">
+      <h2>My Enrolled Courses</h2>
+      <p id="enrolledInfo" class="note">Loading enrolled courses...</p>
     </div>
-  </footer>
 
-  <script src="student-home.js"></script>
+    <div id="enrolledCoursesGrid" class="courses-grid"></div>
+  </section>
 
-  <!-- 1) Zoho Desk ASAP widget script -->
-  <script type="text/javascript" id="zohodeskasap">
-    var d = document;
-    s = d.createElement("script"),
-    s.type = "text/javascript",
-    s.id = "zohodeskasapscript",
-    s.defer = !0,
-    /* If you are NOT using Content-Security-Policy, you can remove this nonce line */
-    s.nonce = "{place_your_nonce_value_here}",
-    s.src = "https://desk.zoho.in/portal/api/web/asapApp/236145000000352001?orgId=60059780889",
-    t = d.getElementsByTagName("script")[0],
-    t.parentNode.insertBefore(s, t),
+  <!-- ================= AVAILABLE COURSES ================= -->
+  <section class="courses-section">
+    <div class="courses-header">
+      <h2>Available Courses</h2>
+      <p id="coursesInfo" class="note">Loading courses...</p>
+    </div>
 
-    // Helper to run code when ASAP is ready
-    window.ZohoDeskAsapReady = function(callback){
-      var pending = window.ZohoDeskAsap__asyncalls = window.ZohoDeskAsap__asyncalls || [];
-      if (window.ZohoDeskAsapReadyStatus) {
-        if (callback) pending.push(callback);
-        pending.forEach(function(cb){ cb && cb(); });
-        window.ZohoDeskAsap__asyncalls = null;
-      } else {
-        callback && pending.push(callback);
+    <div id="coursesGrid" class="courses-grid"></div>
+  </section>
+
+</main>
+
+<!-- ================= FOOTER ================= -->
+<footer class="site-footer">
+  <div class="container">
+    <p>© 2025 Course Enrollment Portal</p>
+  </div>
+</footer>
+
+<!-- ================= JS ================= -->
+<script>
+// ------------------------------------------------------------
+// Firebase init (UNCHANGED)
+// ------------------------------------------------------------
+const firebaseConfig = {
+  apiKey: "AIzaSyBjcNmWxI91atAcnv1ALZM4723Cer6OFGo",
+  authDomain: "student-enrollment-39c2f.firebaseapp.com",
+  databaseURL: "https://student-enrollment-39c2f-default-rtdb.firebaseio.com",
+  projectId: "student-enrollment-39c2f",
+  storageBucket: "student-enrollment-39c2f.firebasestorage.app",
+  messagingSenderId: "810600465736",
+  appId: "1:810600465736:web:953640e6f15a530ee25f7d"
+};
+
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const auth = firebase.auth();
+
+// ------------------------------------------------------------
+// DOM elements
+// ------------------------------------------------------------
+const coursesGrid = document.getElementById("coursesGrid");
+const coursesInfo = document.getElementById("coursesInfo");
+
+const enrolledCoursesGrid = document.getElementById("enrolledCoursesGrid");
+const enrolledInfo = document.getElementById("enrolledInfo");
+
+const profileWrapper = document.getElementById("profileWrapper");
+const profileBtn = document.getElementById("profileBtn");
+const profileNameEl = document.getElementById("profileName");
+const profileInitialEl = document.getElementById("profileInitial");
+const profileDropdown = document.getElementById("profileDropdown");
+const profileLink = document.getElementById("profileLink");
+const logoutBtn = document.getElementById("logoutBtn");
+
+// ------------------------------------------------------------
+function emailKey(email) {
+  return email.trim().toLowerCase().replace(/\./g, ",");
+}
+
+function escapeHtml(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// ------------------------------------------------------------
+// REQUIRE LOGIN
+// ------------------------------------------------------------
+auth.onAuthStateChanged(async (user) => {
+  if (!user) {
+    window.location.href = "auth.html";
+    return;
+  }
+
+  await setupUserProfile(user);
+  await loadStudentCourses();          // ORIGINAL LOGIC
+  renderEnrolledCourses(user.email);   // NEW ADDITION
+});
+
+// ------------------------------------------------------------
+// Profile dropdown (UNCHANGED)
+// ------------------------------------------------------------
+async function setupUserProfile(user) {
+  let displayName = null;
+
+  try {
+    const uid = user.uid;
+    const userNameSnap = await db.ref("users/" + uid + "/name").get();
+
+    if (userNameSnap.exists()) {
+      displayName = userNameSnap.val();
+    } else if (user.email) {
+      const sk = emailKey(user.email);
+      const studSnap = await db.ref("students/" + sk + "/name").get();
+      if (studSnap.exists()) displayName = studSnap.val();
+    }
+  } catch {}
+
+  const short = displayName
+    ? displayName.split(" ")[0]
+    : user.email.split("@")[0];
+
+  profileNameEl.textContent = displayName || short;
+  profileInitialEl.textContent = short[0].toUpperCase();
+
+  profileBtn.onclick = (e) => {
+    e.stopPropagation();
+    profileDropdown.classList.toggle("show");
+  };
+
+  document.addEventListener("click", (e) => {
+    if (!profileWrapper.contains(e.target)) {
+      profileDropdown.classList.remove("show");
+    }
+  });
+
+  profileLink.onclick = () => {
+    window.location.href = "Student_Enrollment/student-my-enrollments.html";
+  };
+
+  logoutBtn.onclick = async () => {
+    await auth.signOut();
+    window.location.href = "auth.html";
+  };
+}
+
+// ------------------------------------------------------------
+// ORIGINAL AVAILABLE COURSES LOGIC (UNCHANGED)
+// ------------------------------------------------------------
+let courseCache = {};
+let enrollmentsByCourse = {};
+
+async function loadStudentCourses() {
+  coursesInfo.textContent = "Loading courses...";
+  coursesGrid.innerHTML = "";
+
+  const [coursesSnap, enrollmentsSnap] = await Promise.all([
+    db.ref("courses").get(),
+    db.ref("enrollments").get()
+  ]);
+
+  courseCache = coursesSnap.exists() ? coursesSnap.val() : {};
+  const enrollData = enrollmentsSnap.exists() ? enrollmentsSnap.val() : {};
+
+  enrollmentsByCourse = {};
+  Object.keys(enrollData).forEach(courseId => {
+    enrollmentsByCourse[courseId] =
+      Object.keys(enrollData[courseId] || {}).length;
+  });
+
+  renderCourseCards();
+}
+
+function renderCourseCards() {
+  coursesGrid.innerHTML = "";
+
+  const ids = Object.keys(courseCache);
+  if (!ids.length) {
+    coursesInfo.textContent = "No courses available.";
+    return;
+  }
+
+  const activeCourses = ids.filter(id => {
+    return (courseCache[id].status || "active") === "active";
+  });
+
+  coursesInfo.textContent =
+    `Showing ${activeCourses.length} active course(s).`;
+
+  activeCourses.forEach(courseId => {
+    const c = courseCache[courseId];
+
+    const filled = enrollmentsByCourse[courseId] || 0;
+    const maxSeats = c.maxSeats || 0;
+    const remaining = maxSeats > 0 ? maxSeats - filled : 999;
+
+    const card = document.createElement("article");
+    card.className = "course-card";
+
+    card.innerHTML = `
+      <div>
+        <h3 class="course-title">${escapeHtml(c.name)}</h3>
+        <p class="course-desc">${escapeHtml(c.description)}</p>
+      </div>
+
+      <div class="course-footer">
+        <span class="badge badge-seats-ok">Available</span>
+        <a href="Student_Enrollment/course-details.html?courseId=${courseId}"
+           class="btn btn-primary ${remaining <= 0 ? "disabled" : ""}">
+          Enroll
+        </a>
+      </div>
+    `;
+
+    coursesGrid.appendChild(card);
+  });
+}
+
+// ------------------------------------------------------------
+// NEW: ENROLLED COURSES
+// ------------------------------------------------------------
+async function renderEnrolledCourses(userEmail) {
+  enrolledCoursesGrid.innerHTML = "";
+  enrolledInfo.textContent = "Loading enrolled courses...";
+
+  const enrollSnap = await db.ref("enrollments").get();
+  if (!enrollSnap.exists()) {
+    enrolledInfo.textContent = "You are not enrolled in any courses.";
+    return;
+  }
+
+  const enrollments = enrollSnap.val();
+  const enrolledCourseIds = [];
+
+  Object.keys(enrollments).forEach(courseId => {
+    Object.values(enrollments[courseId]).forEach(en => {
+      if (en.email === userEmail) {
+        enrolledCourseIds.push(courseId);
       }
-    };
-  </script>
-
-  <!-- 2) Connect Zoho Desk with Firebase logged-in user -->
-  <script>
-    // This assumes Firebase is initialized in student-home.js or earlier
-    firebase.auth().onAuthStateChanged(function(user) {
-      if (!user) return; // not logged in → Zoho widget will still work, but tickets won't be tied to a specific user
-
-      // When Zoho ASAP is ready, tell it who the user is
-      ZohoDeskAsapReady(function() {
-        if (typeof ZDPortalAsap === "function") {
-          ZDPortalAsap("setUser", {
-            email: user.email,
-            name: user.displayName || (user.email ? user.email.split("@")[0] : "Student")
-          });
-        }
-      });
     });
-  </script>
+  });
+
+  if (!enrolledCourseIds.length) {
+    enrolledInfo.textContent = "You are not enrolled in any courses yet.";
+    return;
+  }
+
+  enrolledInfo.textContent =
+    `You are enrolled in ${enrolledCourseIds.length} course(s).`;
+
+  enrolledCourseIds.forEach(courseId => {
+    const c = courseCache[courseId];
+    if (!c) return;
+
+    const card = document.createElement("article");
+    card.className = "course-card";
+    card.onclick = () => {
+      window.location.href =
+        `Student_Enrollment/course-workspace.html?courseId=${courseId}`;
+    };
+
+    card.innerHTML = `
+      <div>
+        <h3 class="course-title">${escapeHtml(c.name)}</h3>
+        <p class="course-desc">${escapeHtml(c.description)}</p>
+      </div>
+
+      <div class="course-footer">
+        <span class="badge badge-seats-ok">Enrolled</span>
+        <span class="btn btn-secondary">Open</span>
+      </div>
+    `;
+
+    enrolledCoursesGrid.appendChild(card);
+  });
+}
+</script>
+
 </body>
 </html>

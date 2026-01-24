@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Course Workspace</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<style>
+body{margin:0;font-family:system-ui;background:#f5f7fb}
+.container{max-width:1200px;margin:auto;padding:16px}
+
+/* HEADER */
+header{background:#0f172a;color:#fff;padding:14px}
+h2{margin:0}
+
+/* COURSE SELECT */
+select{
+  width:100%;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #d1d5db;
+  margin-top:16px;
+  font-size:.9rem
+}
+
+/* CARD GRID */
+.card-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:16px;
+  margin-top:22px
+}
+.card{
+  background:#fff;
+  border-radius:16px;
+  padding:20px;
+  box-shadow:0 6px 20px rgba(15,23,42,.08);
+  cursor:pointer;
+  transition:.2s
+}
+.card:hover{transform:translateY(-4px)}
+.card h3{margin:0}
+.card p{color:#6b7280;font-size:.85rem;margin-top:6px}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="container">
+    <h2>Admin Course Workspace</h2>
+  </div>
+</header>
+
+<div class="container">
+
+<select id="courseSelect">
+  <option>Loading courses...</option>
+</select>
+
+<div class="card-grid">
+
+  <div class="card" onclick="openPage('admin-announcements.html')">
+    <h3>📢 Announcements</h3>
+    <p>Create & manage announcements</p>
+  </div>
+
+  <div class="card" onclick="openPage('admin-assignments.html')">
+    <h3>📤 Assignments</h3>
+    <p>Create assignments & review submissions</p>
+  </div>
+
+  <div class="card" onclick="openPage('admin-attendance.html')">
+    <h3>🧾 Attendance</h3>
+    <p>Create attendance slots</p>
+  </div>
+
+  <div class="card" onclick="openPage('admin-materials.html')">
+    <h3>📁 Study Materials</h3>
+    <p>Upload & manage materials</p>
+  </div>
+
+  <div class="card" onclick="openPage('admin-groups.html')">
+    <h3>👥 Groups</h3>
+    <p>View group details</p>
+  </div>
+
+</div>
+
+</div>
+
+<script>
+/* ================= FIREBASE ================= */
+const firebaseConfig={
+  apiKey:"AIzaSyBjcNmWxI91atAcnv1ALZM4723Cer6OFGo",
+  authDomain:"student-enrollment-39c2f.firebaseapp.com",
+  databaseURL:"https://student-enrollment-39c2f-default-rtdb.firebaseio.com",
+  projectId:"student-enrollment-39c2f",
+  storageBucket:"student-enrollment-39c2f.firebasestorage.app",
+  messagingSenderId:"810600465736",
+  appId:"1:810600465736:web:953640e6f15a530ee25f7d"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database(),auth=firebase.auth();
+
+let currentCourseId=null;
+
+/* ================= AUTH ================= */
+auth.onAuthStateChanged(async user=>{
+  if(!user) location.href="../auth.html";
+  loadCourses();
+});
+
+/* ================= LOAD COURSES ================= */
+async function loadCourses(){
+  const snap=await db.ref("courses").get();
+  courseSelect.innerHTML="";
+  snap.forEach(c=>{
+    const opt=document.createElement("option");
+    opt.value=c.key;
+    opt.textContent=c.val().name;
+    courseSelect.appendChild(opt);
+  });
+  currentCourseId=courseSelect.value;
+  courseSelect.onchange=()=>currentCourseId=courseSelect.value;
+}
+
+/* ================= NAVIGATION ================= */
+function openPage(page){
+  if(!currentCourseId){
+    alert("Please select a course");
+    return;
+  }
+  window.location.href=`${page}?courseId=${currentCourseId}`;
+}
+</script>
+
+</body>
+</html>
