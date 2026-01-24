@@ -2,149 +2,104 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin Home - Course Enrollment</title>
+  <title>Admin Dashboard - Course Enrollment</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="admin.css" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="admin-dashboard.css" />
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  
 </head>
 <body>
-  <!-- Header -->
-  <header class="site-header admin-header">
-    <div class="container header-inner">
-      <h1 class="logo">Admin Panel</h1>
 
-      <nav class="nav-links">
-        <a href="admin.html" class="nav-link">Dashboard</a>
-        <a href="admin-users.html" class="nav-link">User Management</a>
-        <a href="admin-course-list.html" class="nav-link">Courses</a>
-        <a href="admin-enrollments.html" class="nav-link">Enrollments</a>
-        <a href="enrollment-lookup_1.html" class="nav-link">Email Lookup</a>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h2 class="sidebar-logo">Admin Panel</h2>
 
-        <!-- Admin profile wrapper -->
-        <div id="adminProfileWrapper" class="profile-wrapper">
-          <button id="adminProfileBtn" class="profile-btn" aria-haspopup="true" aria-expanded="false">
-            <span id="adminProfileInitial" class="profile-initial">A</span>
-            <span id="adminProfileName" class="profile-name">Admin</span>
-          </button>
+    <nav class="sidebar-nav">
+      <a href="admin.html" class="active">🏠 Dashboard</a>
+      <a href="admin-users.html">👥 User Management</a>
+      <a href="admin-course.html">📘 Create Course</a>
+      <a href="admin-course-list.html">📚 Course List</a>
+      <a href="admin-topics.html">📝 Course Topics</a>
+      <a href="admin-enrollments.html">🎓 Enrollments</a>
+      <a href="admin-group-create.html">👨‍👩‍👦 Create Groups</a>
+      <a href="admin-group-details.html">📂 Group Details</a>
+      <a href="enrollment-lookup_1.html">📧 Email Lookup</a>
+    </nav>
+  </aside>
 
-          <div id="adminProfileDropdown" class="profile-dropdown" role="menu" aria-hidden="true">
-            <a id="adminProfileLink" href="admin-profile.html" class="profile-item">My Profile</a>
-            <a id="adminChangePwdLink" href="change-password.html" class="profile-item">Change Password</a>
-            <button id="adminLogoutBtn" class="profile-item profile-logout">Logout</button>
-          </div>
-        </div>
-      </nav>
-    </div>
-  </header>
+  <!-- Main Content -->
+  <div class="main-wrapper">
 
+    <!-- Top Bar -->
+    <header class="topbar">
+      <h2>Welcome, Admin 👋</h2>
 
-  <!-- Hero -->
-  <section class="hero">
-    <div class="container">
-      <h2>Welcome, Admin 👨‍🏫</h2>
-      <p>Choose a section below to manage your enrollment system.</p>
-    </div>
-  </section>
+      <div class="profile-box">
+        <span class="profile-initial">A</span>
+        <span class="profile-name">Admin</span>
+        <button id="adminLogoutBtn" class="logout-btn">Logout</button>
+      </div>
+    </header>
 
-  <main class="container">
-    <section class="summary-grid">
-      <!-- 1. Create / Update Course -->
-      <a href="admin-course.html" class="summary-card-link">
-        <div class="summary-card">
+    <!-- Dashboard Cards -->
+    <main class="dashboard">
+      <div class="dashboard-grid">
+
+        <a href="admin-course.html" class="card">
           <h3>Create / Update Course</h3>
-          <p class="summary-main">
-            Total Courses: <span id="homeTotalCourses">0</span>
-          </p>
-          <p class="summary-hint">
-            Add or edit courses (name, seats, duration, etc.)
-          </p>
-        </div>
-      </a>
+          <p>Total Courses</p>
+          <span id="homeTotalCourses" class="stat">0</span>
+        </a>
 
-      <!-- 2. Manage Topics for Course -->
-      <a href="admin-topics.html" class="summary-card-link">
-        <div class="summary-card">
-          <h3>Manage Topics for Course</h3>
-          <p class="summary-main">
-            Topics used: <span id="homeTakenTopics">0</span> /
+        <a href="admin-topics.html" class="card">
+          <h3>Manage Topics</h3>
+          <p>Used / Total Topics</p>
+          <span class="stat">
+            <span id="homeTakenTopics">0</span> /
             <span id="homeTotalTopics">0</span>
-          </p>
-          <p class="summary-hint">
-            Create 30–40 topics per course. Each topic is FCFS.
-          </p>
-        </div>
-      </a>
+          </span>
+        </a>
 
-      <!-- 3. Course List -->
-      <a href="admin-course-list.html" class="summary-card-link">
-        <div class="summary-card">
-          <h3>Course List</h3>
-          <p class="summary-main">
-            Total Seats: <span id="homeTotalSeats">0</span>
-          </p>
-          <p class="summary-hint">
-            Enrolled: <span id="homeTotalFilled">0</span> |
-            Remaining: <span id="homeTotalRemaining">0</span>
-          </p>
-        </div>
-      </a>
+        <a href="admin-course-list.html" class="card">
+          <h3>Course Seats</h3>
+          <p>Total / Remaining</p>
+          <span class="stat">
+            <span id="homeTotalSeats">0</span> /
+            <span id="homeTotalRemaining">0</span>
+          </span>
+        </a>
 
-      <!-- 4. Enrolled Students -->
-      <a href="admin-enrollments.html" class="summary-card-link">
-        <div class="summary-card">
-          <h3>Enrolled Students</h3>
-          <p class="summary-main">
-            Total Enrollments: <span id="homeTotalEnrollments">0</span>
-          </p>
-          <p class="summary-hint">
-            Courses with enrollments:
-            <span id="homeCoursesWithEnrollments">0</span>
-          </p>
-        </div>
-      </a>
+        <a href="admin-enrollments.html" class="card">
+          <h3>Enrollments</h3>
+          <p>Total Students</p>
+          <span id="homeTotalEnrollments" class="stat">0</span>
+        </a>
 
-      <!-- 5. Create Group -->
-      <a href="admin-group-create.html" class="summary-card-link">
-        <div class="summary-card">
-          <h3>Create Group</h3>
-          <p class="summary-main">
-            Total Groups: <span id="homeTotalGroups">0</span>
-          </p>
-          <p class="summary-hint">
-            Create groups from enrolled students by course.
-          </p>
-        </div>
-      </a>
+        <a href="admin-group-create.html" class="card">
+          <h3>Create Groups</h3>
+          <p>Total Groups</p>
+          <span id="homeTotalGroups" class="stat">0</span>
+        </a>
 
-      <!-- 6. Group Details -->
-      <a href="admin-group-details.html" class="summary-card-link">
-        <div class="summary-card">
+        <a href="admin-group-details.html" class="card">
           <h3>Group Details</h3>
-          <p class="summary-main">
-            Courses with groups:
-            <span id="homeCoursesWithGroups">0</span>
-          </p>
-          <p class="summary-hint">
-            View groups and their members per course.
-          </p>
-        </div>
-      </a>
-    </section>
-  </main>
+          <p>Courses with Groups</p>
+          <span id="homeCoursesWithGroups" class="stat">0</span>
+        </a>
 
-  <footer class="site-footer">
-    <div class="container">
-      <p>© 2025 Course Enrollment Admin</p>
-    </div>
-  </footer>
+      </div>
+    </main>
 
-  
-  
+    <footer class="footer">
+      © 2025 Course Enrollment Admin
+    </footer>
+
+  </div>
 
   <script src="admin-core.js"></script>
 </body>
