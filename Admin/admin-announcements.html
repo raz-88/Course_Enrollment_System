@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin – Announcements</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<style>
+/* ================= BASE ================= */
+body{margin:0;font-family:system-ui;background:#f5f7fb;color:#111}
+.container{max-width:1200px;margin:auto;padding:16px}
+
+/* HEADER */
+header{background:#0f172a;color:#fff;padding:14px}
+h2{margin:0}
+
+/* CARD */
+.card{
+  background:#fff;
+  border-radius:16px;
+  padding:18px;
+  box-shadow:0 6px 20px rgba(15,23,42,.08);
+  margin-top:16px
+}
+.card h3{margin-top:0}
+
+/* FORM */
+input,textarea{
+  width:100%;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #d1d5db;
+  margin:6px 0;
+  font-size:.9rem
+}
+textarea{resize:vertical}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>div{flex:1}
+
+button{
+  padding:8px 16px;
+  border:none;
+  border-radius:999px;
+  background:#1b5e20;
+  color:#fff;
+  cursor:pointer;
+  font-size:.85rem
+}
+button.secondary{background:#475569}
+button.danger{background:#b91c1c}
+button.outline{
+  background:transparent;
+  border:1px solid #d1d5db;
+  color:#111
+}
+
+/* ANNOUNCEMENT LIST */
+.ann{
+  border:1px solid #e5e7eb;
+  border-radius:14px;
+  padding:14px;
+  margin-bottom:12px
+}
+.ann h4{margin:0}
+.meta{font-size:.8rem;color:#6b7280;margin-top:4px}
+.badge{
+  padding:3px 10px;
+  border-radius:999px;
+  font-size:.75rem;
+  font-weight:600
+}
+.active{background:#dcfce7;color:#166534}
+.suspended{background:#fee2e2;color:#991b1b}
+
+/* ACTIONS */
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="container">
+    <h2>📢 Admin Announcements</h2>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- CREATE / EDIT -->
+<div class="card">
+  <h3 id="formTitle">Create Announcement</h3>
+
+  <input id="title" placeholder="Announcement title">
+  <textarea id="message" placeholder="Announcement message"></textarea>
+
+  <div class="row">
+    <div>
+      <label>Start Date</label>
+      <input type="datetime-local" id="startDate">
+    </div>
+    <div>
+      <label>End Date</label>
+      <input type="datetime-local" id="endDate">
+    </div>
+  </div>
+
+  <button onclick="saveAnnouncement()">Save</button>
+  <button class="outline" onclick="resetForm()">Cancel</button>
+</div>
+
+<!-- LIST -->
+<div class="card">
+  <h3>All Announcements</h3>
+  <div id="list"></div>
+</div>
+
+</div>
+
+<script>
+/* ================= FIREBASE ================= */
+const firebaseConfig={
+  apiKey:"AIzaSyBjcNmWxI91atAcnv1ALZM4723Cer6OFGo",
+  authDomain:"student-enrollment-39c2f.firebaseapp.com",
+  databaseURL:"https://student-enrollment-39c2f-default-rtdb.firebaseio.com",
+  projectId:"student-enrollment-39c2f",
+  storageBucket:"student-enrollment-39c2f.firebasestorage.app",
+  messagingSenderId:"810600465736",
+  appId:"1:810600465736:web:953640e6f15a530ee25f7d"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database(),auth=firebase.auth();
+
+/* ================= GLOBAL ================= */
+const courseId=new URLSearchParams(location.search).get("courseId");
+let editId=null;
+
+/* ================= AUTH ================= */
+auth.onAuthStateChanged(u=>{
+  if(!u) location.href="../auth.html";
+  loadAnnouncements();
+});
+
+/* ================= SAVE ================= */
+async function saveAnnouncement(){
+  if(!title.value||!message.value){
+    alert("Title and message required");
+    return;
+  }
+
+  const data={
+    title:title.value,
+    message:message.value,
+    start:startDate.value||null,
+    end:endDate.value||null,
+    active:true,
+    updatedAt:Date.now()
+  };
+
+  if(editId){
+    await db.ref(`announcements/${courseId}/${editId}`).update(data);
+  }else{
+    data.createdAt=Date.now();
+    await db.ref(`announcements/${courseId}`).push(data);
+  }
+
+  resetForm();
+}
+
+/* ================= LOAD ================= */
+function loadAnnouncements(){
+  db.ref(`announcements/${courseId}`).on("value",s=>{
+    list.innerHTML="";
+    if(!s.exists()){
+      list.innerHTML="<p class='meta'>No announcements</p>";
+      return;
+    }
+
+    s.forEach(a=>{
+      const d=a.val();
+      const div=document.createElement("div");
+      div.className="ann";
+
+      div.innerHTML=`
+        <h4>${d.title}</h4>
+        <p>${d.message}</p>
+
+        <div class="meta">
+          ${d.start?`From ${new Date(d.start).toLocaleString()}`:""}
+          ${d.end?` to ${new Date(d.end).toLocaleString()}`:""}
+        </div>
+
+        <span class="badge ${d.active?"active":"suspended"}">
+          ${d.active?"Active":"Suspended"}
+        </span>
+
+        <div class="actions">
+          <button class="secondary" onclick="editAnn('${a.key}')">Edit</button>
+          <button class="outline" onclick="toggle('${a.key}',${!d.active})">
+            ${d.active?"Suspend":"Activate"}
+          </button>
+          <button class="danger" onclick="del('${a.key}')">Delete</button>
+        </div>
+      `;
+
+      list.appendChild(div);
+    });
+  });
+}
+
+/* ================= ACTIONS ================= */
+async function editAnn(id){
+  const s=await db.ref(`announcements/${courseId}/${id}`).get();
+  if(!s.exists())return;
+  const d=s.val();
+
+  title.value=d.title;
+  message.value=d.message;
+  startDate.value=d.start||"";
+  endDate.value=d.end||"";
+  editId=id;
+  formTitle.textContent="Edit Announcement";
+}
+
+function resetForm(){
+  title.value="";
+  message.value="";
+  startDate.value="";
+  endDate.value="";
+  editId=null;
+  formTitle.textContent="Create Announcement";
+}
+
+function toggle(id,val){
+  db.ref(`announcements/${courseId}/${id}/active`).set(val);
+}
+
+function del(id){
+  if(!confirm("Delete this announcement?"))return;
+  db.ref(`announcements/${courseId}/${id}`).remove();
+}
+</script>
+
+</body>
+</html>

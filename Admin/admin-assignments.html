@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin – Assignments</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<style>
+body{margin:0;font-family:system-ui;background:#f5f7fb;color:#111}
+.container{max-width:1200px;margin:auto;padding:16px}
+header{background:#0f172a;color:#fff;padding:14px}
+h2{margin:0}
+
+.card{
+  background:#fff;border-radius:16px;padding:18px;
+  box-shadow:0 6px 20px rgba(15,23,42,.08);margin-top:16px
+}
+
+input,textarea{
+  width:100%;padding:10px;border-radius:10px;
+  border:1px solid #d1d5db;margin:6px 0
+}
+
+button{
+  padding:7px 14px;border:none;border-radius:999px;
+  cursor:pointer;font-size:.85rem;background:#1b5e20;color:#fff
+}
+button.secondary{background:#475569}
+button.outline{background:transparent;border:1px solid #d1d5db;color:#111}
+button.danger{background:#b91c1c}
+
+.assign{border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-bottom:14px}
+.meta{font-size:.8rem;color:#6b7280}
+
+.badge{padding:3px 10px;border-radius:999px;font-size:.75rem;font-weight:600}
+.active{background:#dcfce7;color:#166534}
+.suspended{background:#fee2e2;color:#991b1b}
+.pending{color:#d97706}
+.approved{color:#15803d}
+.rejected{color:#b91c1c}
+
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th,td{padding:8px;border:1px solid #e5e7eb;text-align:left}
+th{background:#f1f5f9}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="container">
+    <h2>📤 Admin Assignments</h2>
+  </div>
+</header>
+
+<div class="container">
+
+<div class="card">
+  <h3 id="formTitle">Create Assignment</h3>
+  <input id="title" placeholder="Assignment title">
+  <textarea id="desc" placeholder="Assignment description"></textarea>
+  <label>Deadline</label>
+  <input type="datetime-local" id="deadline">
+  <button onclick="saveAssignment()">Save</button>
+  <button class="outline" onclick="resetForm()">Cancel</button>
+</div>
+
+<div class="card">
+  <h3>Assignments</h3>
+  <div id="list"></div>
+</div>
+
+</div>
+
+<script>
+const firebaseConfig={
+  apiKey:"AIzaSyBjcNmWxI91atAcnv1ALZM4723Cer6OFGo",
+  authDomain:"student-enrollment-39c2f.firebaseapp.com",
+  databaseURL:"https://student-enrollment-39c2f-default-rtdb.firebaseio.com",
+  projectId:"student-enrollment-39c2f",
+  storageBucket:"student-enrollment-39c2f.firebasestorage.app",
+  messagingSenderId:"810600465736",
+  appId:"1:810600465736:web:953640e6f15a530ee25f7d"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database(),auth=firebase.auth();
+
+const courseId=new URLSearchParams(location.search).get("courseId");
+let editId=null;
+
+auth.onAuthStateChanged(u=>{
+  if(!u) location.href="../auth.html";
+  loadAssignments();
+});
+
+async function saveAssignment(){
+  if(!title.value||!deadline.value)return alert("Title & deadline required");
+  const data={title:title.value,description:desc.value,deadline:deadline.value,active:true};
+  editId
+    ? await db.ref(`requirements/${courseId}/${editId}`).update(data)
+    : await db.ref(`requirements/${courseId}`).push({...data,createdAt:Date.now()});
+  resetForm();
+}
+
+function loadAssignments(){
+  db.ref(`requirements/${courseId}`).on("value",s=>{
+    list.innerHTML="";
+    if(!s.exists()) return list.innerHTML="<p class='meta'>No assignments</p>";
+    s.forEach(r=>{
+      const d=r.val();
+      list.innerHTML+=`
+        <div class="assign">
+          <h4>${d.title}</h4>
+          <p>${d.description||""}</p>
+          <div class="meta">Deadline: ${new Date(d.deadline).toLocaleString()}</div>
+          <span class="badge ${d.active?"active":"suspended"}">${d.active?"Active":"Suspended"}</span>
+
+          <div class="actions">
+            <button class="secondary" onclick="editAssign('${r.key}')">Edit</button>
+            <button class="outline" onclick="toggle('${r.key}',${!d.active})">
+              ${d.active?"Suspend":"Activate"}
+            </button>
+            <button class="danger" onclick="del('${r.key}')">Delete</button>
+            <button onclick="viewSubs('${r.key}')">View Submissions</button>
+            <button class="outline" onclick="viewNotSubmitted('${r.key}')">
+              View Not Submitted
+            </button>
+          </div>
+
+          <div id="subs-${r.key}"></div>
+        </div>
+      `;
+    });
+  });
+}
+
+/* ================= SUBMITTED ================= */
+async function viewSubs(reqId){
+  const box=document.getElementById("subs-"+reqId);
+  box.innerHTML="<p class='meta'>Loading submissions...</p>";
+
+  const subSnap=await db.ref(`submissions/${courseId}/${reqId}`).get();
+  if(!subSnap.exists()) return box.innerHTML="<p class='meta'>No submissions</p>";
+
+  const [studentsSnap,groupsSnap]=await Promise.all([
+    db.ref("students").get(),
+    db.ref(`groups/${courseId}`).get()
+  ]);
+  const students=studentsSnap.val()||{};
+  const groups=groupsSnap.val()||{};
+
+  let i=1,html=`
+    <table>
+      <tr>
+        <th>S.No</th><th>Name</th><th>Email</th>
+        <th>Group</th><th>Position</th>
+        <th>Status</th><th>Action</th><th>File</th>
+      </tr>
+  `;
+
+  subSnap.forEach(u=>{
+    let name="Student",email="-",group="-",pos="-";
+    Object.values(students).forEach(s=>{
+      if(s.uid===u.key){name=s.name||name;email=s.email||email;}
+    });
+    Object.values(groups).forEach(t=>{
+      Object.values(t).forEach(g=>{
+        if(g.members&&g.members[u.key]){
+          group=g.groupName;pos=g.members[u.key].role;
+        }
+      });
+    });
+    html+=`
+      <tr>
+        <td>${i++}</td><td>${name}</td><td>${email}</td>
+        <td>${group}</td><td>${pos}</td>
+        <td class="${u.val().status}">${u.val().status}</td>
+        <td>
+          <button onclick="updateStatus('${reqId}','${u.key}','approved')">Approve</button>
+          <button class="danger" onclick="updateStatus('${reqId}','${u.key}','rejected')">Reject</button>
+        </td>
+        <td><a href="${u.val().fileURL}" target="_blank">Download</a></td>
+      </tr>
+    `;
+  });
+  box.innerHTML=html+"</table>";
+}
+
+/* ================= NOT SUBMITTED ================= */
+async function viewNotSubmitted(reqId){
+  const box=document.getElementById("subs-"+reqId);
+  box.innerHTML="<p class='meta'>Loading not submitted...</p>";
+
+  const enrollSnap=await db.ref(`enrollments/${courseId}`).get();
+  const subSnap=await db.ref(`submissions/${courseId}/${reqId}`).get();
+
+  const enrolled=new Set(),submitted=new Set();
+  enrollSnap.forEach(e=>enrolled.add(e.key));
+  if(subSnap.exists()) subSnap.forEach(s=>submitted.add(s.key));
+
+  const [studentsSnap,groupsSnap]=await Promise.all([
+    db.ref("students").get(),
+    db.ref(`groups/${courseId}`).get()
+  ]);
+  const students=studentsSnap.val()||{},groups=groupsSnap.val()||{};
+
+  let i=1,html=`
+    <table>
+      <tr>
+        <th>S.No</th><th>Name</th><th>Email</th>
+        <th>Group</th><th>Position</th><th>Status</th>
+      </tr>
+  `;
+
+  [...enrolled].filter(u=>!submitted.has(u)).forEach(uid=>{
+    let name="Student",email="-",group="-",pos="-";
+    Object.values(students).forEach(s=>{
+      if(s.uid===uid){name=s.name;email=s.email;}
+    });
+    Object.values(groups).forEach(t=>{
+      Object.values(t).forEach(g=>{
+        if(g.members&&g.members[uid]){
+          group=g.groupName;pos=g.members[uid].role;
+        }
+      });
+    });
+    html+=`
+      <tr>
+        <td>${i++}</td><td>${name}</td><td>${email}</td>
+        <td>${group}</td><td>${pos}</td>
+        <td style="color:#b45309;font-weight:600">Not Submitted</td>
+      </tr>
+    `;
+  });
+
+  box.innerHTML=html+"</table>";
+}
+
+function updateStatus(r,u,s){db.ref(`submissions/${courseId}/${r}/${u}/status`).set(s);}
+function editAssign(id){
+  db.ref(`requirements/${courseId}/${id}`).get().then(s=>{
+    const d=s.val();title.value=d.title;desc.value=d.description;
+    deadline.value=d.deadline;editId=id;
+  });
+}
+function resetForm(){title.value=desc.value=deadline.value="";editId=null;}
+function toggle(id,v){db.ref(`requirements/${courseId}/${id}/active`).set(v);}
+function del(id){if(confirm("Delete?"))db.ref(`requirements/${courseId}/${id}`).remove();}
+</script>
+
+</body>
+</html>

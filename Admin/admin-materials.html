@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin – Study Materials</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<style>
+/* ===== BASE ===== */
+body{margin:0;font-family:system-ui;background:#f5f7fb;color:#111}
+.container{max-width:1200px;margin:auto;padding:16px}
+
+/* ===== HEADER ===== */
+header{background:#0f172a;color:#fff;padding:14px}
+header h2{margin:0}
+
+/* ===== CARD ===== */
+.card{
+  background:#fff;
+  border-radius:16px;
+  padding:18px;
+  box-shadow:0 6px 20px rgba(15,23,42,.08);
+  margin-top:16px
+}
+.card h3{margin-top:0}
+
+/* ===== FORM ===== */
+input,textarea{
+  width:100%;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #d1d5db;
+  margin:6px 0;
+  font-size:.9rem
+}
+textarea{resize:vertical}
+
+/* ===== BUTTONS ===== */
+button{
+  padding:7px 14px;
+  border:none;
+  border-radius:999px;
+  cursor:pointer;
+  font-size:.85rem;
+  background:#1b5e20;
+  color:#fff
+}
+button.secondary{background:#475569}
+button.outline{
+  background:transparent;
+  border:1px solid #d1d5db;
+  color:#111
+}
+button.danger{background:#b91c1c}
+
+/* ===== MATERIAL ITEM ===== */
+.material{
+  border:1px solid #e5e7eb;
+  border-radius:14px;
+  padding:14px;
+  margin-bottom:12px
+}
+.material h4{margin:0}
+.meta{font-size:.8rem;color:#6b7280;margin-top:4px}
+
+/* ===== BADGES ===== */
+.badge{
+  padding:3px 10px;
+  border-radius:999px;
+  font-size:.75rem;
+  font-weight:600
+}
+.active{background:#dcfce7;color:#166534}
+.suspended{background:#fee2e2;color:#991b1b}
+
+/* ===== ACTIONS ===== */
+.actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-top:10px
+}
+a.link{font-size:.85rem;color:#2563eb;text-decoration:underline}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="container">
+    <h2>📁 Admin – Study Materials</h2>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- CREATE / EDIT -->
+<div class="card">
+  <h3 id="formTitle">Add Study Material</h3>
+
+  <input id="title" placeholder="Material title">
+  <textarea id="desc" placeholder="Short description (optional)"></textarea>
+  <input id="url" placeholder="File URL (Cloudinary / Drive / PDF link)">
+
+  <button onclick="saveMaterial()">Save</button>
+  <button class="outline" onclick="resetForm()">Cancel</button>
+</div>
+
+<!-- LIST -->
+<div class="card">
+  <h3>Uploaded Materials</h3>
+  <div id="list"></div>
+</div>
+
+</div>
+
+<script>
+/* ===== FIREBASE ===== */
+const firebaseConfig={
+  apiKey:"AIzaSyBjcNmWxI91atAcnv1ALZM4723Cer6OFGo",
+  authDomain:"student-enrollment-39c2f.firebaseapp.com",
+  databaseURL:"https://student-enrollment-39c2f-default-rtdb.firebaseio.com",
+  projectId:"student-enrollment-39c2f",
+  storageBucket:"student-enrollment-39c2f.firebasestorage.app",
+  messagingSenderId:"810600465736",
+  appId:"1:810600465736:web:953640e6f15a530ee25f7d"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database(),auth=firebase.auth();
+
+/* ===== GLOBAL ===== */
+const courseId=new URLSearchParams(location.search).get("courseId");
+let editId=null;
+
+/* ===== AUTH ===== */
+auth.onAuthStateChanged(u=>{
+  if(!u) location.href="../auth.html";
+  loadMaterials();
+});
+
+/* ===== SAVE ===== */
+async function saveMaterial(){
+  if(!title.value || !url.value){
+    alert("Title and URL required");
+    return;
+  }
+
+  const data={
+    title:title.value,
+    description:desc.value,
+    url:url.value,
+    active:true,
+    updatedAt:Date.now()
+  };
+
+  if(editId){
+    await db.ref(`materials/${courseId}/${editId}`).update(data);
+  }else{
+    data.createdAt=Date.now();
+    await db.ref(`materials/${courseId}`).push(data);
+  }
+
+  resetForm();
+}
+
+/* ===== LOAD ===== */
+function loadMaterials(){
+  db.ref(`materials/${courseId}`).on("value",snap=>{
+    list.innerHTML="";
+    if(!snap.exists()){
+      list.innerHTML="<p class='meta'>No materials uploaded.</p>";
+      return;
+    }
+
+    snap.forEach(m=>{
+      const d=m.val();
+      const div=document.createElement("div");
+      div.className="material";
+
+      div.innerHTML=`
+        <h4>${d.title}</h4>
+        <p class="meta">${d.description||""}</p>
+
+        <a class="link" href="${d.url}" target="_blank">Open File</a>
+        <br><br>
+
+        <span class="badge ${d.active?"active":"suspended"}">
+          ${d.active?"Active":"Suspended"}
+        </span>
+
+        <div class="actions">
+          <button class="secondary" onclick="editMaterial('${m.key}')">Edit</button>
+          <button class="outline"
+            onclick="toggle('${m.key}',${!d.active})">
+            ${d.active?"Suspend":"Activate"}
+          </button>
+          <button class="danger" onclick="del('${m.key}')">Delete</button>
+        </div>
+      `;
+
+      list.appendChild(div);
+    });
+  });
+}
+
+/* ===== ACTIONS ===== */
+async function editMaterial(id){
+  const s=await db.ref(`materials/${courseId}/${id}`).get();
+  if(!s.exists())return;
+  const d=s.val();
+
+  title.value=d.title;
+  desc.value=d.description;
+  url.value=d.url;
+
+  editId=id;
+  formTitle.textContent="Edit Study Material";
+}
+
+function resetForm(){
+  title.value="";
+  desc.value="";
+  url.value="";
+  editId=null;
+  formTitle.textContent="Add Study Material";
+}
+
+function toggle(id,val){
+  db.ref(`materials/${courseId}/${id}/active`).set(val);
+}
+
+function del(id){
+  if(!confirm("Delete this material?"))return;
+  db.ref(`materials/${courseId}/${id}`).remove();
+}
+</script>
+
+</body>
+</html>

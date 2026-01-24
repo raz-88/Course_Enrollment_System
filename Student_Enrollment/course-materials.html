@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Course Materials</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<style>
+/* ================= BASE ================= */
+body{margin:0;font-family:system-ui;background:#f5f7fb;color:#111}
+.container{max-width:1200px;margin:auto;padding:16px}
+
+/* ================= HEADER (INDEX STYLE) ================= */
+.site-header{background:#1b5e20;color:#fff;padding:12px 0}
+.header-inner{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap
+}
+.logo{font-size:1.3rem;font-weight:700}
+.nav-links a{
+  color:#e8f5e9;
+  text-decoration:none;
+  margin-left:10px;
+  font-size:.9rem
+}
+
+/* ================= PAGE TITLE ================= */
+.page-title{
+  margin-top:16px;
+  background:#fff;
+  border-radius:16px;
+  padding:18px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08)
+}
+.page-title h2{margin:0}
+.page-title p{color:#4b5563;font-size:.95rem}
+
+/* ================= MATERIAL GRID ================= */
+.material-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:16px;
+  margin-top:18px
+}
+
+/* ================= MATERIAL CARD ================= */
+.material{
+  background:#fff;
+  border-radius:16px;
+  padding:18px;
+  box-shadow:0 2px 10px rgba(15,23,42,.08);
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between
+}
+.material h3{
+  margin:0;
+  font-size:1rem;
+  color:#111827
+}
+.meta{
+  font-size:.8rem;
+  color:#6b7280;
+  margin-top:6px
+}
+.material a{
+  margin-top:12px;
+  display:inline-block;
+  text-align:center;
+  padding:7px 14px;
+  border-radius:999px;
+  background:#1b5e20;
+  color:#fff;
+  text-decoration:none;
+  font-size:.85rem
+}
+.material a:hover{
+  background:#166534
+}
+
+/* ================= EMPTY ================= */
+.empty{
+  margin-top:20px;
+  color:#6b7280;
+  font-size:.95rem
+}
+</style>
+</head>
+
+<body>
+
+<!-- ================= HEADER ================= -->
+<header class="site-header">
+  <div class="container header-inner">
+    <div class="logo">Learning Engagement Portal</div>
+    <nav class="nav-links">
+      <a href="../index.html">Home</a>
+      <a href="student-my-enrollments.html">My Enrollments</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ================= TITLE ================= -->
+<div class="page-title">
+  <h2 id="courseName">Materials</h2>
+  <p id="courseDesc"></p>
+</div>
+
+<!-- ================= MATERIALS ================= -->
+<div id="materialGrid" class="material-grid"></div>
+
+</div>
+
+<script>
+/* ================= FIREBASE ================= */
+const firebaseConfig={
+  apiKey:"AIzaSyBjcNmWxI91atAcnv1ALZM4723Cer6OFGo",
+  authDomain:"student-enrollment-39c2f.firebaseapp.com",
+  databaseURL:"https://student-enrollment-39c2f-default-rtdb.firebaseio.com",
+  projectId:"student-enrollment-39c2f",
+  storageBucket:"student-enrollment-39c2f.firebasestorage.app",
+  messagingSenderId:"810600465736",
+  appId:"1:810600465736:web:953640e6f15a530ee25f7d"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database(),auth=firebase.auth();
+
+/* ================= GLOBAL ================= */
+const courseId=new URLSearchParams(location.search).get("courseId");
+
+/* ================= AUTH ================= */
+auth.onAuthStateChanged(async user=>{
+  if(!user) return location.href="../auth.html";
+  loadCourse();
+  loadMaterials();
+});
+
+/* ================= COURSE ================= */
+async function loadCourse(){
+  const snap=await db.ref("courses/"+courseId).get();
+  if(!snap.exists()) return;
+  courseName.textContent=snap.val().name+" – Materials";
+  courseDesc.textContent=snap.val().description||"";
+}
+
+/* ================= MATERIALS ================= */
+function loadMaterials(){
+  const grid=document.getElementById("materialGrid");
+  grid.innerHTML="";
+
+  db.ref("materials/"+courseId)
+    .orderByChild("time")
+    .on("value",snap=>{
+      if(!snap.exists()){
+        grid.innerHTML="<p class='empty'>No materials uploaded yet.</p>";
+        return;
+      }
+
+      const items=[];
+      snap.forEach(m=>items.push(m.val()));
+      items.reverse(); // newest first
+
+      grid.innerHTML="";
+      items.forEach(m=>{
+        grid.innerHTML+=`
+          <div class="material">
+            <div>
+              <h3>${m.name}</h3>
+              <div class="meta">
+                Uploaded on ${new Date(m.time).toLocaleDateString()}
+              </div>
+            </div>
+            <a href="${m.url}" target="_blank">Open / Download</a>
+          </div>
+        `;
+      });
+    });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>My Group</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<style>
+body{margin:0;font-family:system-ui;background:#f5f7fb;color:#111}
+.container{max-width:1100px;margin:auto;padding:16px}
+
+/* HEADER */
+.site-header{background:#1b5e20;color:#fff;padding:12px 0}
+.header-inner{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.logo{font-size:1.3rem;font-weight:700}
+.nav-links a{color:#e8f5e9;text-decoration:none;margin-left:10px}
+
+/* CARD */
+.card{
+  background:#fff;border-radius:16px;padding:18px;margin-top:18px;
+  box-shadow:0 2px 10px rgba(15,23,42,.08)
+}
+.card h2{margin:0 0 12px}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse}
+th,td{
+  border:1px solid #e5e7eb;
+  padding:10px;
+  text-align:left;
+  font-size:.9rem
+}
+th{background:#ecfdf3;font-weight:600}
+
+.role-lead{font-weight:700;color:#14532d}
+.role-member{color:#1f2937}
+
+.empty{color:#6b7280;margin-top:12px}
+
+.btn{
+  margin-top:14px;
+  padding:7px 16px;
+  border:none;
+  border-radius:8px;
+  background:#2e7d32;
+  color:#fff;
+  cursor:pointer
+}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="container header-inner">
+    <div class="logo">Learning Engagement Portal</div>
+    <nav class="nav-links">
+      <a href="../index.html">Home</a>
+      <a href="student-my-enrollments.html">My Enrollments</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+  <div id="groupBox"></div>
+</div>
+
+<script>
+/* ================= FIREBASE ================= */
+const firebaseConfig={
+  apiKey:"AIzaSyBjcNmWxI91atAcnv1ALZM4723Cer6OFGo",
+  authDomain:"student-enrollment-39c2f.firebaseapp.com",
+  databaseURL:"https://student-enrollment-39c2f-default-rtdb.firebaseio.com",
+  projectId:"student-enrollment-39c2f",
+  storageBucket:"student-enrollment-39c2f.firebasestorage.app",
+  messagingSenderId:"810600465736",
+  appId:"1:810600465736:web:953640e6f15a530ee25f7d"
+};
+
+if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db=firebase.database(), auth=firebase.auth();
+
+/* ================= GLOBAL ================= */
+const courseId = new URLSearchParams(location.search).get("courseId");
+
+/* ================= AUTH ================= */
+auth.onAuthStateChanged(async user=>{
+  if(!user) return location.href="../auth.html";
+  loadMyGroup(user.email);
+});
+
+/* ================= LOAD USER GROUP (USING enId) ================= */
+async function loadMyGroup(email){
+  const box = document.getElementById("groupBox");
+  box.innerHTML = "<p>Loading group...</p>";
+
+  /* 1️⃣ Find enrollment ID for this user in this course */
+  const enrollSnap = await db.ref(`enrollments/${courseId}`).get();
+  if(!enrollSnap.exists()){
+    box.innerHTML = "<p class='empty'>You are not enrolled in this course.</p>";
+    return;
+  }
+
+  let myEnId = null;
+  enrollSnap.forEach(e=>{
+    if(e.val().email && e.val().email.toLowerCase() === email.toLowerCase()){
+      myEnId = e.key;
+    }
+  });
+
+  if(!myEnId){
+    box.innerHTML = "<p class='empty'>Enrollment not found.</p>";
+    return;
+  }
+
+  /* 2️⃣ Find group using enrollment ID */
+  const groupSnap = await db.ref(`groups/${courseId}`).get();
+  if(!groupSnap.exists()){
+    box.innerHTML = "<p class='empty'>No groups assigned.</p>";
+    return;
+  }
+
+  let foundGroup = null;
+
+  groupSnap.forEach(topic=>{
+    topic.forEach(group=>{
+      if(group.val().members && group.val().members[myEnId]){
+        foundGroup = group.val();
+      }
+    });
+  });
+
+  if(!foundGroup){
+    box.innerHTML = "<p class='empty'>You are not assigned to any group.</p>";
+    return;
+  }
+
+  /* 3️⃣ Render table */
+  let rows = "", sn = 1;
+  Object.values(foundGroup.members).forEach(m=>{
+    rows += `
+      <tr>
+        <td>${sn++}</td>
+        <td>${m.name || "-"}</td>
+        <td>${m.email || "-"}</td>
+        <td class="${m.role === "Lead" ? "role-lead" : "role-member"}">
+          ${m.role || "Member"}
+        </td>
+        <td>
+          ${m.joinedAt ? new Date(m.joinedAt).toLocaleString() : "-"}
+        </td>
+      </tr>
+    `;
+  });
+
+  box.innerHTML = `
+    <div class="card">
+      <h2>Group: ${foundGroup.groupName || "My Group"}</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>SN</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+
+      <button class="btn" onclick="history.back()">Close</button>
+    </div>
+  `;
+}
+</script>
+
+</body>
+</html>

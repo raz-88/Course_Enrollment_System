@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Course Workspace</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<style>
+body{margin:0;font-family:system-ui;background:#f5f7fb}
+.container{max-width:1200px;margin:auto;padding:16px}
+
+/* Header (same as index) */
+.site-header{background:#1b5e20;color:#fff;padding:12px 0}
+.header-inner{display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:1.3rem;font-weight:700}
+.nav-links a{color:#e8f5e9;text-decoration:none;margin-left:10px}
+
+/* Course info */
+.course-info{background:#fff;border-radius:16px;padding:18px;margin-top:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+
+/* Dashboard cards */
+.dashboard{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:16px;
+  margin-top:20px
+}
+.card{
+  background:#fff;
+  border-radius:16px;
+  padding:18px;
+  cursor:pointer;
+  box-shadow:0 2px 10px rgba(15,23,42,.08);
+  transition:.15s
+}
+.card:hover{transform:translateY(-2px)}
+.card h3{margin:0;font-size:1rem}
+.card p{font-size:.85rem;color:#6b7280}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="container header-inner">
+    <div class="logo">Learning Engagement Portal</div>
+    <nav class="nav-links">
+      <a href="../index.html">Home</a>
+      <a href="student-my-enrollments.html">My Enrollments</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- COURSE INFO -->
+<div class="course-info">
+  <h2 id="courseName">Loading...</h2>
+  <p id="courseDesc"></p>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard">
+
+  <div class="card" onclick="go('course-announcements.html')">
+    <h3>📢 Announcements</h3>
+    <p>Important updates from admin</p>
+  </div>
+
+  <div class="card" onclick="go('course-assignments.html')">
+    <h3>📤 Assignments</h3>
+    <p>Upload required work</p>
+  </div>
+
+  <div class="card" onclick="go('course-attendance.html')">
+    <h3>🧾 Attendance</h3>
+    <p>Mark daily attendance</p>
+  </div>
+
+  <div class="card" onclick="go('course-group.html')">
+    <h3>👥 Group</h3>
+    <p>Your project group</p>
+  </div>
+
+  <div class="card" onclick="go('course-materials.html')">
+    <h3>📁 Materials</h3>
+    <p>Study resources</p>
+  </div>
+
+</div>
+
+</div>
+
+<script>
+/* ===== Firebase ===== */
+const firebaseConfig={
+ apiKey:"AIzaSyBjcNmWxI91atAcnv1ALZM4723Cer6OFGo",
+ authDomain:"student-enrollment-39c2f.firebaseapp.com",
+ databaseURL:"https://student-enrollment-39c2f-default-rtdb.firebaseio.com",
+ projectId:"student-enrollment-39c2f",
+ storageBucket:"student-enrollment-39c2f.firebasestorage.app",
+ messagingSenderId:"810600465736",
+ appId:"1:810600465736:web:953640e6f15a530ee25f7d"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database(),auth=firebase.auth();
+
+const courseId=new URLSearchParams(location.search).get("courseId");
+
+/* Auth guard */
+auth.onAuthStateChanged(async u=>{
+ if(!u) return location.href="../auth.html";
+ const s=await db.ref("courses/"+courseId).get();
+ if(s.exists()){
+   courseName.textContent=s.val().name;
+   courseDesc.textContent=s.val().description||"";
+ }
+});
+
+/* Navigation */
+function go(page){
+ window.location.href = `${page}?courseId=${courseId}`;
+}
+</script>
+
+</body>
+</html>
