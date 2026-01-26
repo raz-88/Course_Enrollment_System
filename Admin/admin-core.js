@@ -1,11 +1,10 @@
 /* ---------------------------------------------------
-   admin-core.js (combined admin-profile + admin-home)
-   Firebase init happens ONCE here.
+   admin-core.js (CLEAN & FIXED)
 --------------------------------------------------- */
 
-// -------------------------------
-// Firebase Initialization (only once)
-// -------------------------------
+// ===============================
+// Firebase Initialization (ONCE)
+// ===============================
 const firebaseConfig = {
   apiKey: "AIzaSyBjcNmWxI91atAcnv1ALZM4723Cer6OFGo",
   authDomain: "student-enrollment-39c2f.firebaseapp.com",
@@ -23,11 +22,9 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db = firebase.database();
 
-/* ---------------------------------------------------
-   ADMIN PROFILE SECTION (DROPDOWN / LOGOUT)
---------------------------------------------------- */
-
-// DOM
+// ===============================
+// DOM – PROFILE
+// ===============================
 const profileWrapper = document.getElementById("adminProfileWrapper");
 const profileBtn = document.getElementById("adminProfileBtn");
 const profileNameEl = document.getElementById("adminProfileName");
@@ -37,113 +34,9 @@ const profileLink = document.getElementById("adminProfileLink");
 const changePwdLink = document.getElementById("adminChangePwdLink");
 const logoutBtn = document.getElementById("adminLogoutBtn");
 
-// utility
-function emailKey(email) {
-  return email.trim().toLowerCase().replace(/\./g, ",");
-}
-
-function setSignedOutUI() {
-  if (!profileNameEl || !profileInitialEl || !profileBtn) return;
-  profileNameEl.textContent = "Sign in";
-  profileInitialEl.textContent = "A";
-  profileBtn.onclick = function () {
-    window.location.href = "../auth.html";
-  };
-  profileDropdown?.classList.remove("show");
-  profileDropdown?.setAttribute("aria-hidden", "true");
-}
-
-// Auth state listener for admin profile
-auth.onAuthStateChanged(async (user) => {
-  if (!profileBtn) return;
-
-  if (!user) {
-    setSignedOutUI();
-    return;
-  }
-
-  // Load admin name
-  let displayName = null;
-  try {
-    const uid = user.uid;
-    const nameSnap = await db.ref("users/" + uid + "/name").get();
-    if (nameSnap.exists()) {
-      displayName = nameSnap.val();
-    } else {
-      // fallback from students path
-      const email = user.email || "";
-      if (email) {
-        const sk = emailKey(email);
-        const studSnap = await db.ref("students/" + sk + "/name").get();
-        if (studSnap.exists()) displayName = studSnap.val();
-      }
-    }
-  } catch (err) {
-    console.error("Admin profile read error:", err);
-  }
-
-  const shortName =
-    displayName?.split(" ")[0] ||
-    (user.email ? user.email.split("@")[0] : "Admin");
-
-  profileNameEl.textContent =
-    displayName || (user.email ? user.email.split("@")[0] : "Admin");
-  profileInitialEl.textContent = shortName[0]?.toUpperCase() || "A";
-
-  // dropdown toggle
-  profileBtn.onclick = function (ev) {
-    ev.stopPropagation();
-    const show = !profileDropdown.classList.contains("show");
-    profileDropdown.classList.toggle("show", show);
-    profileDropdown.setAttribute("aria-hidden", show ? "false" : "true");
-    profileBtn.setAttribute("aria-expanded", show ? "true" : "false");
-  };
-
-  document.addEventListener("click", (ev) => {
-    if (!profileWrapper.contains(ev.target)) {
-      profileDropdown.classList.remove("show");
-      profileDropdown.setAttribute("aria-hidden", "true");
-      profileBtn.setAttribute("aria-expanded", "false");
-    }
-  });
-
-  // My profile page
-  if (profileLink) {
-    profileLink.onclick = function (ev) {
-      ev.preventDefault();
-      profileDropdown.classList.remove("show");
-      window.location.href = "admin-profile.html";
-    };
-  }
-
-  // Change password page
-  if (changePwdLink) {
-    changePwdLink.onclick = function (ev) {
-      ev.preventDefault();
-      profileDropdown.classList.remove("show");
-      window.location.href = "change-password.html";
-    };
-  }
-
-  // Logout
-  if (logoutBtn) {
-    logoutBtn.onclick = async function () {
-      try {
-        await auth.signOut();
-        window.location.href = "../auth.html";
-      } catch (err) {
-        console.error("Logout failed:", err);
-        alert("Logout failed. Try again.");
-      }
-    };
-  }
-});
-
-/* ---------------------------------------------------
-   ADMIN HOME STATISTICS (Dashboard)
---------------------------------------------------- */
-
-// DOM for homepage stats
+// ===============================
+// DOM – DASHBOARD STATS
+// ===============================
 const homeTotalCoursesEl = document.getElementById("homeTotalCourses");
 const homeTakenTopicsEl = document.getElementById("homeTakenTopics");
 const homeTotalTopicsEl = document.getElementById("homeTotalTopics");
@@ -155,34 +48,119 @@ const homeCoursesWithEnrollmentsEl = document.getElementById("homeCoursesWithEnr
 const homeTotalGroupsEl = document.getElementById("homeTotalGroups");
 const homeCoursesWithGroupsEl = document.getElementById("homeCoursesWithGroups");
 
-// Live datasets
+// ===============================
+// HELPERS
+// ===============================
+function emailKey(email) {
+  return email.trim().toLowerCase().replace(/\./g, ",");
+}
+
+// ===============================
+// SINGLE AUTH LISTENER (IMPORTANT)
+// ===============================
+auth.onAuthStateChanged(async (user) => {
+  if (!user) {
+    window.location.href = "../auth.html";
+    return;
+  }
+
+  /* -------- ROLE CHECK -------- */
+  try {
+    const roleSnap = await db.ref("users/" + user.uid + "/role").get();
+    if (!roleSnap.exists() || roleSnap.val() !== "admin") {
+      alert("Access Denied: Admin Only");
+      window.location.href = "index.html";
+      return;
+    }
+  } catch (err) {
+    console.error("Role check failed:", err);
+    window.location.href = "../auth.html";
+    return;
+  }
+
+  /* -------- PROFILE UI -------- */
+  let displayName = null;
+
+  try {
+    const nameSnap = await db.ref("users/" + user.uid + "/name").get();
+    if (nameSnap.exists()) {
+      displayName = nameSnap.val();
+    } else if (user.email) {
+      const sk = emailKey(user.email);
+      const studSnap = await db.ref("students/" + sk + "/name").get();
+      if (studSnap.exists()) displayName = studSnap.val();
+    }
+  } catch {}
+
+  const short =
+    displayName?.split(" ")[0] ||
+    (user.email ? user.email.split("@")[0] : "Admin");
+
+  if (profileNameEl) profileNameEl.textContent = displayName || short;
+  if (profileInitialEl) profileInitialEl.textContent = short[0].toUpperCase();
+
+  if (profileBtn && profileDropdown) {
+    profileBtn.onclick = (e) => {
+      e.stopPropagation();
+      profileDropdown.classList.toggle("show");
+    };
+
+    document.addEventListener("click", (e) => {
+      if (!profileWrapper.contains(e.target)) {
+        profileDropdown.classList.remove("show");
+      }
+    });
+  }
+
+  if (profileLink) {
+    profileLink.onclick = () => (window.location.href = "admin-profile.html");
+  }
+
+  if (changePwdLink) {
+    changePwdLink.onclick = () =>
+      (window.location.href = "change-password.html");
+  }
+
+  /* -------- LOGOUT (FIXED) -------- */
+  if (logoutBtn) {
+    logoutBtn.onclick = async () => {
+      if (!confirm("Are you sure you want to logout?")) return;
+      await auth.signOut();
+      window.location.href = "../auth.html";
+    };
+  }
+
+  /* -------- DASHBOARD -------- */
+  loadDashboard();
+});
+
+// ===============================
+// DASHBOARD DATA
+// ===============================
 let coursesData = {};
 let enrollmentsData = {};
 let groupsData = {};
 
-function loadAll() {
-  // Load courses
-  db.ref("courses").on("value", (snap) => {
-    coursesData = snap.val() || {};
+function loadDashboard() {
+  if (!homeTotalCoursesEl) return;
+
+  db.ref("courses").on("value", (s) => {
+    coursesData = s.val() || {};
     updateDashboard();
   });
 
-  // Load enrollments
-  db.ref("enrollments").on("value", (snap) => {
-    enrollmentsData = snap.val() || {};
+  db.ref("enrollments").on("value", (s) => {
+    enrollmentsData = s.val() || {};
     updateDashboard();
   });
 
-  // Load groups
-  db.ref("groups").on("value", (snap) => {
-    groupsData = snap.val() || {};
+  db.ref("groups").on("value", (s) => {
+    groupsData = s.val() || {};
     updateDashboard();
   });
 }
 
 function updateDashboard() {
-  if (!homeTotalCoursesEl) return; // Means: current page is not dashboard
-
   const courseIds = Object.keys(coursesData);
 
   let totalCourses = courseIds.length;
@@ -196,41 +174,36 @@ function updateDashboard() {
     const c = coursesData[cid] || {};
     const maxSeats = c.maxSeats || 0;
     const filledSeats = c.filledSeats || 0;
-    const remaining = maxSeats - filledSeats;
 
     totalSeats += maxSeats;
     totalFilled += filledSeats;
-    if (remaining > 0) totalRemaining += remaining;
+    totalRemaining += Math.max(0, maxSeats - filledSeats);
 
     const topics = c.topics || {};
-    const topicIds = Object.keys(topics);
-    totalTopics += topicIds.length;
-    takenTopics += topicIds.filter((tid) => topics[tid].isTaken).length;
+    totalTopics += Object.keys(topics).length;
+    takenTopics += Object.values(topics).filter(t => t.isTaken).length;
   });
 
-  // Enrollments
   let totalEnrollments = 0;
   let coursesWithEnrollments = 0;
-  Object.entries(enrollmentsData).forEach(([cid, enrolls]) => {
-    const count = Object.keys(enrolls || {}).length;
-    if (count > 0) {
-      totalEnrollments += count;
+  Object.values(enrollmentsData).forEach(e => {
+    const c = Object.keys(e || {}).length;
+    if (c > 0) {
+      totalEnrollments += c;
       coursesWithEnrollments++;
     }
   });
 
-  // Groups
   let totalGroups = 0;
   let coursesWithGroups = 0;
-  Object.entries(groupsData).forEach(([cid, groups]) => {
-    const count = Object.keys(groups || {}).length;
-    if (count > 0) {
-      totalGroups += count;
+  Object.values(groupsData).forEach(g => {
+    const c = Object.keys(g || {}).length;
+    if (c > 0) {
+      totalGroups += c;
       coursesWithGroups++;
     }
   });
 
-  // Update UI
   homeTotalCoursesEl.textContent = totalCourses;
   homeTotalSeatsEl.textContent = totalSeats;
   homeTotalFilledEl.textContent = totalFilled;
@@ -242,41 +215,6 @@ function updateDashboard() {
   homeTotalGroupsEl.textContent = totalGroups;
   homeCoursesWithGroupsEl.textContent = coursesWithGroups;
 }
-
-/* ---------------------------------------------------
-   ADMIN-ONLY PAGE PROTECTION (MUST BE LOGGED IN)
---------------------------------------------------- */
-auth.onAuthStateChanged(async (user) => {
-  // If not logged in → go to login page
-  if (!user) {
-    window.location.href = "../auth.html";
-    return;
-  }
-
-  // Check user's role
-  try {
-    const snap = await db.ref("users/" + user.uid + "/role").get();
-    const role = snap.val();
-
-    // If no role or user is not admin => block access
-    if (!role || role !== "admin") {
-      alert("Access Denied: Admin Only");
-      window.location.href = "../index.html";
-      return;
-    }
-
-    // If admin → allow page to load normally
-    console.log("Admin authenticated:", user.email);
-
-  } catch (err) {
-    console.error("Role check failed:", err);
-    window.location.href = "../auth.html";
-  }
-});
-
-
-// Start dashboard loading (only runs if dashboard elements exist)
-loadAll();
 
 /* ---------------------------------------------------
    END admin-core.js
